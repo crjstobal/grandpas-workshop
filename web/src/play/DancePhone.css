@@ -1,0 +1,82 @@
+/* Statues on the phone: the whole screen changes color with the game, readable at arm's length
+   while dancing. Sits under the sticky phone header (z-index 2) and above the page. */
+.dp { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: calc(env(safe-area-inset-top) + 88px) 20px calc(env(safe-area-inset-bottom) + 28px); text-align: center; overflow: hidden; color: var(--paper); background: radial-gradient(ellipse at 50% 0, #22385a, var(--night) 70%); transition: background-color 0.2s; }
+.dp > * { position: relative; z-index: 1; }
+
+.dp-eyebrow { font-size: 14px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 800; color: var(--brass); }
+.dp .dp-big { margin: 0; font-family: var(--serif); font-weight: 700; font-size: 84px; line-height: 1; }
+.dp .dp-mid { margin: 8px 0 0; font-family: var(--serif); font-size: 34px; line-height: 1.15; }
+.dp .dp-sub { margin: 6px 0 0; font-size: 19px; font-weight: 700; line-height: 1.4; max-width: 320px; opacity: 0.95; }
+.dp-round { position: absolute; top: calc(env(safe-area-inset-top) + 80px); left: 50%; transform: translateX(-50%); padding: 6px 16px; border-radius: 999px; background: #0d1b2a66; border: 2px solid #ffffff44; font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+
+/* ---------- ask for the motion sensor ---------- */
+.dp .dp-ask-title { color: #ffd66b; text-shadow: 0 5px 0 #6b3d14, 0 12px 30px #000a; }
+.dp-rules { display: flex; flex-direction: column; gap: 12px; margin: 18px 0 6px; width: 100%; max-width: 340px; }
+.dp-rules div { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 18px; background: #ffffff12; border: 2px solid #ffffff22; text-align: left; font-size: 17px; line-height: 1.35; }
+.dp-rules svg { flex: none; }
+.dp-rules b { color: #ffe2a0; }
+.dp-icon-dance { animation: dp-wiggle 0.6s ease-in-out infinite; }
+.dp-go { width: 100%; max-width: 340px; margin-top: 14px; padding: 18px 20px; border: 0; border-radius: 18px; background: var(--holly); color: #fff; font-size: 21px; font-weight: 800; box-shadow: 0 6px 0 #7a2219, 0 14px 30px #0008; animation: dp-breathe 1.8s ease-in-out infinite; }
+.dp-go:active { transform: translateY(4px); box-shadow: 0 2px 0 #7a2219; }
+@keyframes dp-breathe { 50% { transform: scale(1.04); } }
+@keyframes dp-wiggle { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+
+/* ---------- waiting and countdown ---------- */
+.dp-record { animation: spin 2.4s linear infinite; filter: drop-shadow(0 10px 20px #000a); }
+.dp-record.gold { animation-duration: 4s; filter: drop-shadow(0 0 24px #ffd66b); }
+.dp.dp-ready .dp-big { color: #ffe2a0; }
+.dp-count { font-family: var(--serif); font-weight: 700; font-size: 180px; line-height: 1; color: #fff3d6; text-shadow: 0 8px 0 #6b3d14, 0 0 50px #ffd66b; animation: dp-count 0.9s ease-out both; }
+@keyframes dp-count { 0% { transform: scale(2); opacity: 0; } 30% { transform: scale(0.94); opacity: 1; } 100% { transform: scale(1); } }
+
+/* ---------- music: dance! ---------- */
+.dp-music { background: linear-gradient(135deg, #b23a2e, #d9893a, #2e5e4e, #8a3a7a, #b23a2e); background-size: 400% 400%; animation: dp-shift 4s linear infinite; }
+@keyframes dp-shift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+.dp-dance span { display: inline-block; font-size: 96px; color: #fff3d6; text-shadow: 0 5px 0 #3a2516, 0 12px 24px #0008; animation: dp-letter 0.6s ease-in-out infinite; }
+@keyframes dp-letter { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-22px) rotate(6deg); } }
+.dp-dots i { position: absolute; z-index: 0; width: 90px; height: 90px; border-radius: 50%; background: #ffffff1c; animation: dp-float 3.2s ease-in-out infinite; }
+.dp-dots i:nth-child(1) { left: 8%; top: 22%; }
+.dp-dots i:nth-child(2) { right: 10%; top: 30%; width: 60px; height: 60px; animation-delay: -1s; }
+.dp-dots i:nth-child(3) { left: 16%; bottom: 18%; width: 120px; height: 120px; animation-delay: -2s; }
+.dp-dots i:nth-child(4) { right: 6%; bottom: 26%; width: 70px; height: 70px; animation-delay: -0.5s; }
+.dp-dots i:nth-child(5) { left: 44%; top: 14%; width: 40px; height: 40px; animation-delay: -1.6s; }
+.dp-dots i:nth-child(6) { right: 34%; bottom: 8%; width: 50px; height: 50px; animation-delay: -2.4s; }
+@keyframes dp-float { 50% { transform: translateY(-30px) scale(1.15); } }
+
+.dp-energy { position: relative; width: 190px; height: 190px; margin: 18px 0 6px; }
+.dp-energy i { position: absolute; inset: 0; border-radius: 50%; border: 6px solid #fff3d6; opacity: calc(0.25 + var(--lv) * 0.75); transform: scale(calc(0.45 + var(--lv) * 0.55)); transition: transform 0.25s ease-out, opacity 0.25s; }
+.dp-energy i:nth-child(2) { inset: 30px; border-color: #ffd66b; transform: scale(calc(0.6 + var(--lv) * 0.5)); }
+.dp-energy i:nth-child(3) { inset: 62px; border: 0; background: #fff3d6; box-shadow: 0 0 40px #ffd66b; transform: scale(calc(0.7 + var(--lv) * 0.6)); }
+
+.dp-tap { width: 210px; height: 210px; margin: 16px 0 6px; border-radius: 50%; border: 0; background: radial-gradient(circle at 40% 35%, #ffe9a8, #ffd66b 45%, #c8963e); color: var(--ink); font-family: var(--serif); font-size: 44px; font-weight: 700; box-shadow: 0 10px 0 #8a6224, 0 20px 40px #0008; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.dp-tap.a { animation: dp-tap-a 0.25s ease-out; }
+.dp-tap.b { animation: dp-tap-b 0.25s ease-out; }
+@keyframes dp-tap-a { 40% { transform: scale(0.9) rotate(-6deg); } }
+@keyframes dp-tap-b { 40% { transform: scale(0.9) rotate(6deg); } }
+.dp-tap.frozen { background: radial-gradient(circle at 40% 35%, #ffffff, #cfeaff 50%, #7fb8e6); color: #174a75; box-shadow: 0 10px 0 #3f7fb5, 0 0 0 8px #ffffff66; animation: none; }
+
+/* ---------- freeze! ---------- */
+.dp-dots { position: absolute !important; inset: 0; z-index: 0 !important; pointer-events: none; }
+.dp.dp-freeze { background: radial-gradient(ellipse at 50% 40%, #f2faff, #9fd3ff 45%, #2f6fa8 85%, #174a75); color: #0e2f4d; }
+.dp.dp-freeze .dp-sub { color: #0e2f4d; }
+.dp.dp-freeze .dp-round { background: #ffffff55; border-color: #ffffffaa; color: #0e2f4d; }
+.dp h1.dp-freeze { font-size: 76px; color: #ffffff; text-shadow: 0 -3px 0 #174a75, 0 3px 0 #174a75, -3px 0 0 #174a75, 3px 0 0 #174a75, 0 9px 0 #0c2c4a, 0 0 40px #cfeaff; animation: dp-slam 0.4s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes dp-slam { 0% { transform: scale(2); opacity: 0; } 60% { transform: scale(0.95); opacity: 1; } 100% { transform: scale(1); } }
+.dp-frost { position: absolute; inset: 0; z-index: 0 !important; background: radial-gradient(ellipse 80% 70% at 50% 50%, transparent 55%, #ffffffaa 100%); animation: fadein 0.2s ease; }
+.dp-still { margin: 14px 0 4px; padding: 12px 22px; border-radius: 999px; background: #ffffffcc; color: #174a75; font-size: 20px; font-weight: 800; box-shadow: 0 8px 20px #0c2c4a55; }
+.dp-still.warn { background: #b23a2e; color: #fff; animation: dp-shiver 0.15s linear infinite; }
+@keyframes dp-shiver { 50% { transform: translateX(4px); } }
+.dp-icebar { width: 240px; height: 14px; margin-top: 18px; border-radius: 999px; overflow: hidden; background: #0c2c4a33; }
+.dp-icebar div { height: 100%; background: #ffffff; box-shadow: 0 0 10px #fff; transition: width 0.2s linear; }
+
+/* ---------- caught: wobbly! ---------- */
+.dp-caught { background: radial-gradient(ellipse at 50% 30%, #fffaf0, var(--paper) 60%, #eadcc0); color: var(--ink); }
+.dp-caught .dp-round { background: #3a251614; border-color: #3a251633; color: var(--ink); }
+.dp .dp-wobbly { font-size: 86px; color: var(--holly); text-shadow: 0 6px 0 #7a2219; animation: dp-jelly 0.9s ease-in-out infinite; }
+@keyframes dp-jelly { 0%, 100% { transform: skewX(0) scale(1, 1); } 25% { transform: skewX(-10deg) scale(1.07, 0.93); } 50% { transform: skewX(7deg) scale(0.95, 1.06); } 75% { transform: skewX(-3deg) scale(1.02, 0.98); } }
+.dp-who { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; font-family: var(--serif); font-size: 30px; font-weight: 700; }
+.dp-dot { width: 26px; height: 26px; border-radius: 50%; box-shadow: 0 0 0 4px #fff, 0 3px 8px #0004; flex: none; }
+.dp.dp-caught .dp-sub { color: var(--pine); }
+
+/* ---------- done ---------- */
+.dp-done { background: radial-gradient(ellipse at 50% 35%, #3a2f1a, var(--night) 75%); }
+.dp .dp-win { font-size: 58px; color: #ffd66b; text-shadow: 0 5px 0 #6b3d14, 0 0 40px #ffb85c; margin-top: 12px; }

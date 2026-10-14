@@ -1,0 +1,137 @@
+/* Chapter "memory": Grandpa's box with the brass memory lock, and Alexa's question card.
+   The game parts keep the warm workshop palette; the card uses Alexa+ style tokens. */
+
+.memory {
+  --ax-card: #14181e;
+  --ax-surface: #1b2028;
+  --ax-surface-2: #232a35;
+  --ax-text: #f5f7fa;
+  --ax-dim: #a7b0bd;
+  --ax-cyan: #1fb7e8;
+  --ax-cyan-2: #6fe3ff;
+  --ax-green: #3ddc84;
+  position: absolute; inset: 0; pointer-events: none;
+}
+.memory button { pointer-events: auto; }
+
+/* ---------- the box ---------- */
+.mq-box { position: absolute; left: 130px; top: 226px; width: 700px; height: 600px; filter: drop-shadow(0 20px 30px #0009); animation: mq-box-in 0.9s cubic-bezier(.2,.8,.3,1.1) both; }
+.mq-box svg { overflow: visible; display: block; }
+@keyframes mq-box-in { from { opacity: 0; transform: translateY(40px) scale(0.96); } }
+
+.mq-engrave { font-family: var(--serif); font-size: 15px; font-weight: 700; letter-spacing: 5px; fill: #5c3d12; }
+.mq-engrave.light { fill: #fff1c2; opacity: 0.5; }
+
+.mq-dial-body { transform-box: fill-box; transform-origin: center; }
+.mq-dial.click .mq-dial-body { animation: mq-dial-click 0.55s cubic-bezier(.3,1.6,.5,1); }
+@keyframes mq-dial-click { 30% { transform: scale(0.9); } 65% { transform: scale(1.08); } }
+
+.mq-pointer { transform-box: fill-box; transform-origin: center; transform: rotate(var(--locked)); transition: transform 0.75s cubic-bezier(.3,1.7,.45,1); }
+.mq-dial.open .mq-pointer { transform: rotate(0deg); }
+
+.mq-dial-ring { stroke: #7dffb0; opacity: 0; transition: opacity 0.4s; }
+.mq-dial.open .mq-dial-ring { opacity: 0.55; animation: mq-ring-breathe 2.6s ease-in-out infinite; }
+@keyframes mq-ring-breathe { 50% { opacity: 0.25; } }
+
+.mq-lamp { fill: #3b1d12; transition: fill 0.3s; }
+.mq-lamp-glow { opacity: 0; transition: opacity 0.4s; }
+.mq-dial.open .mq-lamp { fill: #b6ffd2; }
+.mq-dial.open .mq-lamp-glow { opacity: 1; }
+.mq-dial.click .mq-lamp-glow { animation: mq-lamp-flash 0.8s ease-out; }
+@keyframes mq-lamp-flash { 0% { opacity: 0; } 30% { opacity: 1; transform: scale(2.4); } 100% { opacity: 1; } }
+.mq-lamp-glow { transform-box: fill-box; transform-origin: center; }
+
+/* opening */
+.mq-lid { transform-box: fill-box; transform-origin: 0% 100%; transition: transform 1.1s cubic-bezier(.25,1.4,.45,1); }
+.mq-box.open .mq-lid { transform: translate(-36px, -150px) rotate(-14deg); }
+.mq-velvet { opacity: 0; transition: opacity 0.4s 0.2s; }
+.mq-box.open .mq-velvet { opacity: 1; }
+.mq-inner-light { opacity: 0; transition: opacity 1.2s 0.25s; }
+.mq-box.open .mq-inner-light { opacity: 1; animation: mq-flicker 3.2s 1.4s ease-in-out infinite; }
+@keyframes mq-flicker { 50% { opacity: 0.78; } }
+
+.mq-star { opacity: 0; transform: translateY(110px) scale(0.6); transform-box: fill-box; transform-origin: center; }
+.mq-box.open .mq-star { animation: mq-star-rise 1.8s 0.5s cubic-bezier(.2,.8,.3,1) forwards, mq-star-float 4s 2.3s ease-in-out infinite; }
+@keyframes mq-star-rise { to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes mq-star-float { 0% { opacity: 1; transform: translateY(0) scale(1); } 50% { opacity: 1; transform: translateY(-10px) scale(1) rotate(2deg); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.mq-glint { animation: mq-twinkle 2.2s ease-in-out infinite; }
+
+.mq-sparkles path { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.mq-box.open .mq-sparkles path { animation: mq-twinkle 1.8s ease-in-out infinite; }
+@keyframes mq-twinkle { 0%, 100% { opacity: 0; transform: scale(0.4); } 50% { opacity: 1; transform: scale(1); } }
+
+/* ---------- Alexa+ card ---------- */
+.mq-card {
+  position: absolute; left: 930px; top: 214px; width: 880px;
+  padding: 32px 36px 30px; border-radius: 16px;
+  background: var(--ax-card); color: var(--ax-text);
+  border: 1px solid #ffffff14;
+  box-shadow: 0 30px 80px #000c, 0 0 0 1px #00000066;
+  font-family: var(--sans);
+  animation: mq-card-in 0.6s 0.2s cubic-bezier(.2,.8,.3,1) both;
+  transition: box-shadow 0.4s;
+}
+@keyframes mq-card-in { from { opacity: 0; transform: translateX(40px); } }
+.mq-card.right, .mq-card.done { box-shadow: 0 30px 80px #000c, 0 0 0 2px #3ddc8466, 0 0 60px #3ddc8433; }
+
+.mq-head { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+.mq-ring {
+  position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(circle, #0e1116 52%, transparent 54%), conic-gradient(from 0deg, var(--ax-cyan), #2d6cf0, var(--ax-cyan-2), var(--ax-cyan));
+  box-shadow: 0 0 16px #1fb7e866;
+}
+.mq-ring i { position: absolute; inset: -6px; border-radius: 50%; border: 3px solid var(--ax-cyan); opacity: 0; }
+.mq-ring.on { animation: mq-ring-spin 2.4s linear infinite; box-shadow: 0 0 30px #1fb7e8cc, 0 0 70px #1fb7e855; }
+.mq-ring.on i { animation: mq-ring-pulse 1.3s ease-out infinite; }
+.mq-ring.happy { background: radial-gradient(circle, #0e1116 52%, transparent 54%), conic-gradient(from 0deg, var(--ax-green), var(--ax-cyan), var(--ax-green)); }
+@keyframes mq-ring-spin { to { transform: rotate(360deg); } }
+@keyframes mq-ring-pulse { from { opacity: 0.8; transform: scale(0.9); } to { opacity: 0; transform: scale(1.35); } }
+
+.mq-label { font-size: 30px; font-weight: 800; letter-spacing: 0.01em; }
+.mq-label em { font-style: normal; font-weight: 600; color: var(--ax-dim); }
+.mq-progress { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.mq-count { font-size: 28px; font-weight: 700; color: var(--ax-dim); }
+.mq-pips { display: flex; gap: 8px; }
+.mq-pips i { width: 14px; height: 14px; border-radius: 50%; background: var(--ax-surface-2); transition: background 0.3s, box-shadow 0.3s; }
+.mq-pips i.now { background: var(--ax-cyan); box-shadow: 0 0 10px var(--ax-cyan); }
+.mq-pips i.on { background: var(--ax-green); box-shadow: 0 0 10px var(--ax-green); }
+
+.mq-question { margin: 0 0 24px; font-family: var(--sans); font-size: 44px; line-height: 1.18; font-weight: 800; animation: mq-rise 0.45s ease both; }
+@keyframes mq-rise { from { opacity: 0; transform: translateY(14px); } }
+
+.mq-options { display: flex; flex-direction: column; gap: 14px; }
+.mq-option {
+  display: flex; align-items: center; gap: 22px; width: 100%; min-height: 86px;
+  padding: 12px 24px 12px 14px; border-radius: 14px; border: 3px solid transparent;
+  background: var(--ax-surface); color: var(--ax-text); text-align: left;
+  font-family: var(--sans); font-size: 34px; font-weight: 700;
+  transition: transform 0.18s ease-out, border-color 0.18s, background 0.18s, box-shadow 0.18s, opacity 0.3s;
+  animation: mq-rise 0.45s ease backwards;
+}
+.mq-option:focus { outline: none; }
+.mq-letter {
+  flex: none; display: grid; place-items: center; width: 58px; height: 58px; border-radius: 12px;
+  background: var(--ax-surface-2); color: var(--ax-dim); font-size: 30px; font-weight: 800;
+  transition: background 0.18s, color 0.18s;
+}
+.mq-text { flex: 1; min-width: 0; line-height: 1.2; }
+
+.mq-option.focus { border-color: var(--ax-cyan); background: #1d2a36; transform: scale(1.025); box-shadow: 0 0 0 4px #1fb7e822, 0 0 28px #1fb7e855; }
+.mq-option.focus .mq-letter { background: var(--ax-cyan); color: #04141c; }
+
+.mq-option.right { border-color: var(--ax-green); background: #173528; transform: scale(1.03); box-shadow: 0 0 0 4px #3ddc8433, 0 0 44px #3ddc8488; animation: mq-right 0.6s ease; }
+.mq-option.right .mq-letter { background: var(--ax-green); color: #052012; }
+@keyframes mq-right { 40% { transform: scale(1.06); } }
+.mq-option.fade { opacity: 0.35; }
+
+.mq-option.wrong { animation: mq-shake 0.5s ease; }
+@keyframes mq-shake { 15%, 55% { transform: translateX(-12px); } 35%, 75% { transform: translateX(12px); } }
+.mq-option.dim { opacity: 0.32; border-color: transparent; box-shadow: none; transform: none; }
+.mq-option.dim .mq-text { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: #ffffff66; }
+
+.mq-done { display: flex; align-items: center; gap: 28px; padding: 18px 4px 10px; animation: mq-rise 0.5s ease both; }
+.mq-done-icon { flex: none; color: var(--ax-green); filter: drop-shadow(0 0 16px #3ddc8488); }
+.mq-done p { margin: 0; font-size: 40px; line-height: 1.25; font-weight: 800; }
+
+.mq-hint { display: flex; align-items: center; gap: 14px; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid #ffffff14; font-size: 28px; font-weight: 700; color: var(--ax-dim); }
+.mq-phone { flex: none; color: var(--ax-cyan); }

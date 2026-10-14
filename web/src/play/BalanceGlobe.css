@@ -1,0 +1,44 @@
+/* The snow globe balance game, on the phone. */
+.bg { position: relative; display: flex; flex-direction: column; align-items: center; min-height: 100%; user-select: none; -webkit-user-select: none; }
+
+.bg-who { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 440px; padding: 4px 4px 10px; }
+.bg-who > div { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.bg-who small { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); font-weight: 800; }
+.bg-who strong { font-family: var(--serif); font-size: 24px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bg-avatar { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif); font-size: 22px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #0008; box-shadow: 0 0 0 3px var(--brass), 0 4px 12px #0008; }
+.bg-goal { display: flex; gap: 6px; }
+.bg-goal i { width: 22px; height: 22px; border-radius: 50%; border: 3px dashed #c8963e88; }
+.bg-goal i.on { border: 0; background: radial-gradient(circle at 35% 30%, #fff0c2, #c8963e 55%, #8a6224); box-shadow: 0 0 12px #ffd36b; }
+
+.bg-stage { position: relative; width: 100%; max-width: 440px; display: flex; justify-content: center; touch-action: none; }
+.bg-stage canvas { display: block; filter: drop-shadow(0 18px 24px #0009); }
+.bg-stage.wobble canvas { animation: bg-wobble 0.6s ease-in-out 2; transform-origin: 50% 85%; }
+@keyframes bg-wobble { 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+
+.bg-count { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); font-family: var(--serif); font-size: 108px; font-weight: 700; color: #fff6e0; text-shadow: 0 4px 24px #000, 0 0 40px #ffd36b; pointer-events: none; animation: bg-count 0.9s cubic-bezier(.2,1.4,.4,1) forwards; }
+@keyframes bg-count { from { transform: translate(-50%, -50%) scale(0.4); opacity: 0; } 25% { opacity: 1; } 75% { transform: translate(-50%, -50%) scale(1); opacity: 1; } to { transform: translate(-50%, -50%) scale(1.15); opacity: 0; } }
+
+.bg-timer { width: 100%; max-width: 320px; height: 10px; margin: 8px 0 4px; border-radius: 6px; background: #ffffff14; overflow: hidden; opacity: 0; transition: opacity 0.4s; }
+.bg-timer.on { opacity: 1; }
+.bg-timer div { height: 100%; background: linear-gradient(90deg, #8a6224, #c8963e, #ffe2a0); transform-origin: left center; border-radius: 6px; }
+
+.phone .bg-hint, .bg-hint { min-height: 26px; margin: 6px 0 0; font-size: 18px; font-weight: 800; color: #ffe2a0cc; transition: color 0.3s; }
+.phone .bg-hint.good, .bg-hint.good { color: #fff3c4; text-shadow: 0 0 14px #ffd36b; }
+
+.bg-card { position: absolute; left: 50%; bottom: 6px; width: calc(100% - 8px); max-width: 400px; transform: translateX(-50%); padding: 20px 20px 22px; border-radius: 22px; text-align: center; color: var(--ink);
+  background: var(--paper); background-image: repeating-linear-gradient(transparent 0 31px, #c8963e1f 31px 32px);
+  box-shadow: 0 -4px 0 var(--brass) inset, 0 20px 50px #000b; animation: bg-card 0.5s cubic-bezier(.2,1.3,.4,1); }
+@keyframes bg-card { from { transform: translate(-50%, 60px); opacity: 0; } }
+.phone .bg-card h2, .bg-card h2 { margin: 2px 0 8px; font-family: var(--serif); font-size: 30px; color: var(--ink); }
+.phone .bg-card p, .bg-card p { margin: 0 0 8px; font-size: 17px; line-height: 1.4; color: var(--ink); }
+.bg-card .big { margin-top: 14px; font-size: 22px; padding: 18px 20px; }
+.bg-card.result.ok { box-shadow: 0 -4px 0 #e0b25a inset, 0 0 0 3px #ffd36b, 0 20px 50px #000b, 0 0 60px #ffd36b66; }
+.bg-card.result.ok h2 { color: #8a6224; }
+.bg-card.result.no h2 { color: var(--holly); }
+.phone .bg-card .bg-jingle, .bg-card .bg-jingle { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #c8963e1f; font-family: var(--serif); font-style: italic; font-size: 16px; animation: fadein 0.6s ease; }
+.phone .bg-card .bg-wait, .bg-card .bg-wait { font-size: 14px; opacity: 0.6; }
+
+.bg-tilt { display: block; margin: 0 auto 4px; overflow: visible; }
+.bg-tilt-phone { transform-origin: 60px 42px; animation: bg-tilt 3s ease-in-out infinite; }
+@keyframes bg-tilt { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+.bg-who strong.long { font-size: 19px; }

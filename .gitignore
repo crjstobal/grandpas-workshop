@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.data/
+.env
+*.log
+.DS_Store
+art/c4d/backup/
+art/**/*.c4d.bak
+tv-app/build/
+art/blender/*.blend
+art/blender/*.blend1
+art/renders/
+.tunnel-url
+.vega-*.log
+art/blender/tex/*.exr

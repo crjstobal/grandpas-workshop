@@ -1,0 +1,81 @@
+/* The snow globe balance game, on the TV. Laid out on the 1920x1080 stage, inside the 5% safe area
+   (96px left and right, 54px top and bottom). */
+.gtv { position: absolute; inset: 0; z-index: 6; pointer-events: none; color: var(--paper); }
+
+/* a warm pool of lamp light on the workbench behind the globe */
+.gtv::before { content: ""; position: absolute; left: 960px; top: 560px; width: 1300px; height: 1000px; margin: -500px 0 0 -650px; border-radius: 50%;
+  background: radial-gradient(closest-side, #ffcf8a33, #ffb45c14 55%, transparent); }
+
+.gtv-globe { position: absolute; left: 618px; top: 100px; width: 684px; height: 822px; animation: gtv-in 1s cubic-bezier(.2,1.3,.4,1); }
+@keyframes gtv-in { from { transform: translateY(-80px) scale(0.9); opacity: 0; } }
+.gtv-tilt { transform-origin: 50% 88%; will-change: transform; }
+.gtv-wobble { transform-origin: 50% 88%; }
+.gtv-wobble.a { animation: gtv-wobble-a 1s ease-in-out; }
+.gtv-wobble.b { animation: gtv-wobble-b 1s ease-in-out; }
+@keyframes gtv-wobble-a { 15% { transform: rotate(-4deg); } 35% { transform: rotate(3.5deg); } 55% { transform: rotate(-2.5deg); } 75% { transform: rotate(1.5deg); } }
+@keyframes gtv-wobble-b { 15% { transform: rotate(-4deg); } 35% { transform: rotate(3.5deg); } 55% { transform: rotate(-2.5deg); } 75% { transform: rotate(1.5deg); } }
+.gtv-globe canvas { display: block; filter: drop-shadow(0 30px 40px #000a); }
+
+/* the side panels: dark walnut with a brass edge */
+.gtv-panel { position: absolute; top: 300px; width: 450px; padding: 30px 34px 34px; border-radius: 28px; border: 3px solid var(--brass);
+  background: repeating-linear-gradient(92deg, #ffffff05 0 3px, transparent 3px 11px), linear-gradient(160deg, #3a2414f2, #1f130af2);
+  box-shadow: 0 26px 60px #000c, inset 0 2px 0 #ffe2a055, inset 0 -8px 20px #0006; animation: gtv-panel 0.8s cubic-bezier(.2,1.2,.4,1) both; }
+.gtv-turn { left: 96px; }
+.gtv-score { right: 96px; width: 420px; text-align: center; animation-delay: 0.12s; }
+@keyframes gtv-panel { from { transform: translateY(40px); opacity: 0; } }
+.gtv-eyebrow { display: block; font-size: 28px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); }
+
+.gtv-who { display: flex; align-items: center; gap: 22px; margin: 18px 0 14px; }
+.gtv-who strong { font-family: var(--serif); font-size: 66px; line-height: 1.05; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 3px 12px #000a; }
+.gtv-avatar { flex: none; width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif); font-size: 46px; font-weight: 700; color: #fff; text-shadow: 0 2px 4px #0009;
+  box-shadow: 0 0 0 5px var(--brass), 0 0 0 9px #0d1b2a, 0 10px 24px #000a; }
+.gtv-turn.live .gtv-avatar { animation: gtv-glow 1.6s ease-in-out infinite; }
+@keyframes gtv-glow { 50% { box-shadow: 0 0 0 5px #ffd36b, 0 0 0 9px #0d1b2a, 0 0 40px #ffd36b; } }
+
+.gtv-line { display: flex; align-items: center; gap: 16px; margin: 0; min-height: 84px; font-size: 32px; font-weight: 800; line-height: 1.25; color: #ffe2a0; transition: color 0.3s, text-shadow 0.3s; }
+.gtv-line.good { color: #fff3c4; text-shadow: 0 0 20px #ffd36b; }
+.gtv-pass { flex: none; animation: gtv-pass 2.4s ease-in-out infinite; }
+@keyframes gtv-pass { 50% { transform: rotate(-12deg) scale(1.06); } }
+
+.gtv-hold { display: flex; align-items: center; gap: 16px; margin-top: 20px; opacity: 0.35; transition: opacity 0.5s; }
+.gtv-hold.on { opacity: 1; }
+.gtv-hold span { font-size: 28px; font-weight: 800; color: var(--paper-2); }
+.gtv-hold-bar { flex: 1; height: 26px; border-radius: 14px; background: #0d1b2acc; border: 3px solid #c8963eaa; overflow: hidden; }
+.gtv-hold-bar div { height: 100%; transform-origin: left center; transform: scaleX(0); border-radius: 12px; background: linear-gradient(90deg, #8a6224, #c8963e 40%, #ffe2a0); box-shadow: 0 0 18px #ffd36b; }
+
+.gtv-gears { display: flex; justify-content: center; gap: 20px; margin: 22px 0 6px; }
+.gtv-gear { display: grid; place-items: center; filter: drop-shadow(0 6px 10px #0009); }
+.gtv-gear svg { animation: gtv-spin 14s linear infinite; }
+.gtv-gear.on svg { filter: drop-shadow(0 0 16px #ffd36baa); animation-duration: 6s; }
+.gtv-gear.pop { animation: gtv-pop 0.9s cubic-bezier(.2,1.8,.4,1); }
+@keyframes gtv-pop { from { transform: scale(0.2) rotate(-120deg); } 60% { transform: scale(1.35); } }
+@keyframes gtv-spin { to { transform: rotate(360deg); } }
+.gtv-count { margin: 6px 0 14px; font-size: 32px; font-weight: 800; color: var(--paper-2); }
+.gtv-count strong { font-family: var(--serif); font-size: 48px; color: #ffd36b; margin-right: 6px; }
+.gtv-players { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.gtv-players li { display: flex; align-items: center; gap: 14px; padding: 6px 16px; border-radius: 14px; font-size: 28px; font-weight: 800; opacity: 0.7; }
+.gtv-players li i { flex: none; width: 24px; height: 24px; border-radius: 50%; box-shadow: 0 0 0 3px #ffffff44; }
+.gtv-players li span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gtv-players li.tried { opacity: 1; }
+.gtv-players li.now { opacity: 1; background: #c8963e2e; box-shadow: inset 0 0 0 2px #c8963e88; }
+
+/* the ribbon over the globe's base after each attempt */
+.gtv-banner { position: absolute; left: 960px; top: 846px; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-width: 760px; max-width: 1400px; padding: 22px 64px 24px; border-radius: 14px; text-align: center; color: var(--ink);
+  background: var(--paper); box-shadow: 0 0 0 4px var(--brass), 0 24px 60px #000c; animation: gtv-banner 4.8s cubic-bezier(.2,1.3,.4,1) forwards; }
+.gtv-banner::before, .gtv-banner::after { content: ""; position: absolute; top: 22px; width: 70px; height: 76px; z-index: -1; background: var(--holly); }
+.gtv-banner::before { left: -46px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 26% 50%); }
+.gtv-banner::after { right: -46px; clip-path: polygon(0 0, 100% 0, 74% 50%, 100% 100%, 0 100%); }
+.gtv-banner strong { font-family: var(--serif); font-size: 54px; line-height: 1.1; white-space: nowrap; }
+.gtv-banner span { font-size: 30px; font-weight: 800; color: #6b4a2c; }
+.gtv-banner.ok { box-shadow: 0 0 0 4px #ffd36b, 0 0 60px #ffd36b88, 0 24px 60px #000c; }
+.gtv-banner.ok strong { color: #8a6224; }
+.gtv-banner.no strong { color: var(--holly); }
+@keyframes gtv-banner {
+  0% { transform: translate(-50%, 60px) scale(0.7); opacity: 0; }
+  10% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  88% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, 30px) scale(0.96); opacity: 0; }
+}
+.gtv-who strong.long { font-size: 50px; white-space: normal; }
+.gtv-who strong.xlong { font-size: 40px; white-space: normal; }
