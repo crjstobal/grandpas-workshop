@@ -3,6 +3,7 @@
 body sits on the same pixel. Neutral warm key + soft fill + cool rim so he reads on dark and warm scenes.
 
   ... --python fly.py -- --out DIR          -> DIR/jingle_fly_a.png, DIR/jingle_fly_b.png, DIR/jingle_fly.json
+  ... --python fly.py -- --out DIR --scarf  -> DIR/jingle_fly_a_scarf.png, ... (with the scarf the family can buy)
 """
 import json
 import math
@@ -15,7 +16,7 @@ from gw import K, bpy, Vector
 from gw_pip import pip, pip_meshes
 from bpy_extras.object_utils import world_to_camera_view
 
-A = K.args(); OUT = A["out"]
+A = K.args(); OUT = A["out"]; SCARF = bool(A.get("scarf")); SUFFIX = "_scarf" if SCARF else ""
 RZ = math.radians(-68)          # front (-Y) turned to screen-left and a bit towards the viewer
 SIZE = 512
 
@@ -26,7 +27,7 @@ def build(pose):
     sc.cycles.adaptive_threshold = 0.01
     # reflections for the brass, invisible to camera (transparent film)
     K.world_hdri(f"{HDR}/christmas_photo_studio_01/christmas_photo_studio_01_2k.hdr", strength=0.45)
-    r = pip("jingle", pose, (0, 0, 0), rot_z=RZ)
+    r = pip("jingle", pose, (0, 0, 0), rot_z=RZ, scarf=SCARF)
     key = K.light("AREA", (-0.45, -0.55, 0.55), (0, 0, 0.1), power=26, size=0.45, k=3600, name="key")
     fill = K.light("AREA", (0.55, -0.45, 0.15), (0, 0, 0.1), power=8, size=0.6, k=5200, name="fill")
     rim = K.light("AREA", (0.35, 0.55, 0.45), (0, 0, 0.1), power=30, size=0.3, k=7500, name="rim")
@@ -61,10 +62,10 @@ def silhouette(root, cam, c):
 
 # one fixed camera for both frames: aimed at the body centre (which does not move between frames)
 CAM_DIR = Vector((0.0, -1.0, 0.18)).normalized()   # slightly from above
-C = Vector((float(A.get("cx", 0.0)), float(A.get("cy", 0.0)), float(A.get("cz", 0.085))))
-ORTHO = float(A.get("ortho", 0.34))
+C = Vector((float(A.get("cx", 0.0)), float(A.get("cy", 0.0)), float(A.get("cz", 0.111))))
+ORTHO = float(A.get("ortho", 0.30))
 info = {}
-for pose, name in (("fly_a", "jingle_fly_a"), ("fly_b", "jingle_fly_b")):
+for pose, name in (("fly_a", "jingle_fly_a" + SUFFIX), ("fly_b", "jingle_fly_b" + SUFFIX)):
     sc, r = build(pose)
     cam = K.camera(tuple(C + CAM_DIR * 3.0), tuple(C), ortho=ORTHO)
     bpy.context.view_layer.update()
@@ -77,4 +78,4 @@ for pose, name in (("fly_a", "jingle_fly_a"), ("fly_b", "jingle_fly_b")):
                                     round((x1 / ORTHO + 0.5) * SIZE), round((0.5 - y0 / ORTHO) * SIZE)]}
     print("FLY", name, info[name], flush=True)
     K.save(f"{os.path.dirname(os.path.abspath(__file__))}/{name}.blend")
-json.dump(info, open(f"{OUT}/jingle_fly.json", "w"), indent=1)
+json.dump(info, open(f"{OUT}/jingle_fly{SUFFIX}.json", "w"), indent=1)

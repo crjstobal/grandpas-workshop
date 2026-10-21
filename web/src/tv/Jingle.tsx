@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import type { ChapterId, JingleMood } from "../../../shared/types";
 import { GARDEN } from "./spots";
+import { flySprite, gardenSprites } from "./look";
 
-// Where Jingle stands in each scene (stage pixels, bottom center of the sprite) and his size.
-// On the workbench he sits on his brass perch: the sprites are rendered with that scene's camera,
-// so the 1024px PNG drawn at 328x328 from (1008, 450) lines up exactly.
-// (The workbench perch, for scenes rendered with the workbench camera: 328x328 from (1008, 450).)
-// In the garden he sits on the workshop's snowy window ledge, with sprites rendered from that camera.
+// Where Jingle is in each scene (stage pixels, bottom center of the sprite) and his size.
+// In the garden he sits on the workshop's snowy window ledge, with sprites rendered from that camera:
+// Jingle himself, plus a still layer with his contact shadow and the dent he leaves in the snow.
+// Everywhere else there is nothing rendered for him to stand on, so he hovers, flapping.
 const LEDGE = { x: GARDEN.sprite.x + GARDEN.sprite.size / 2, y: GARDEN.sprite.y + GARDEN.sprite.size, size: GARDEN.sprite.size };
 const GARDEN_CHAPTERS: ChapterId[] = ["wind_jingle", "warm_jingle"];
 const SPOTS: Partial<Record<ChapterId, { x: number; y: number; size: number }>> = {
@@ -20,7 +20,15 @@ const DEFAULT_SPOT = { x: 1640, y: 780, size: 300 };
 export function Jingle({ mood, line, at, chapter, shake }: { mood: JingleMood; line: string; at: number; chapter: ChapterId; shake?: number }) {
   const spot = SPOTS[chapter] ?? DEFAULT_SPOT;
   const pose = mood === "sleep" ? "sleep" : mood === "cold" ? "cold" : "awake";
-  const sprite = GARDEN_CHAPTERS.includes(chapter) ? `/scenes/garden_jingle_${pose}.png` : `/scenes/jingle_${pose}.png`;
+  const garden = GARDEN_CHAPTERS.includes(chapter);
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    if (garden) return;
+    const t = setInterval(() => setFrame((f) => 1 - f), 260);
+    return () => clearInterval(t);
+  }, [garden]);
+  const perched = gardenSprites(pose);
+  const sprite = garden ? perched.body : flySprite(frame);
   const [hasSprite, setHasSprite] = useState(true);
   const [bounce, setBounce] = useState(false);
   const [jiggle, setJiggle] = useState(false);
@@ -38,9 +46,10 @@ export function Jingle({ mood, line, at, chapter, shake }: { mood: JingleMood; l
   }, [shake]);
 
   return (
-    <div className={`jingle ${mood} ${bounce ? "bounce" : ""} ${jiggle ? "jiggle" : ""}`} style={{ left: spot.x - spot.size / 2, top: spot.y - spot.size, width: spot.size, height: spot.size }}>
+    <div className={`jingle ${mood} ${garden ? "perched" : "hovering"} ${bounce ? "bounce" : ""} ${jiggle ? "jiggle" : ""}`} style={{ left: spot.x - spot.size / 2, top: spot.y - spot.size, width: spot.size, height: spot.size }}>
+      {garden && hasSprite && <img className="ground" src={perched.ground} alt="" />}
       {hasSprite
-        ? <img src={sprite} alt="Jingle" onError={() => setHasSprite(false)} />
+        ? <img className="body" src={sprite} alt="Jingle" onError={() => setHasSprite(false)} />
         : <JingleDrawing mood={mood} />}
       {line && mood !== "sleep" && <div className={`bubble ${spot.x > 1300 ? "left" : "right"}`} key={at}>{line}</div>}
       {mood === "sleep" && <div className="zzz">z z z</div>}

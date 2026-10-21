@@ -1,7 +1,7 @@
 // The game rules. Pure state transitions on a Room: no network, no AI, no vendor SDKs.
 // The HTTP layer, the MCP server and the AI judge all go through these functions.
 import { randomBytes, randomUUID } from "node:crypto";
-import { CHAPTERS, DANCE_ROUNDS, DRAWER_CODE, FREE_HINTS, ORCHESTRA_ROUNDS, PRODUCTS, chapterNumber, chapterOf, nextChapter, CHAPTER_COUNT } from "../../../shared/story";
+import { CHAPTERS, DANCE_ROUNDS, DRAWER_CODE, ORCHESTRA_ROUNDS, PRODUCTS, chapterNumber, chapterOf, nextChapter, CHAPTER_COUNT } from "../../../shared/story";
 import type {
   ChapterId, Checkout, DanceState, FinalePhase, Find, FlightState, GlobeState, IcingStroke, JingleMood, Player, ProductId,
   PublicState, QuizQuestion, QuizState, ScanKind, Turn, AlexaCard,
@@ -212,6 +212,13 @@ export function advance(r: Room) {
   return r.chapter;
 }
 
+/** Offline development only (GW_MOCK=1): jumps straight to a chapter to check its screen. */
+export function devGoto(r: Room, id: ChapterId) {
+  chapterOf(id);
+  enter(r, id);
+  return r.chapter;
+}
+
 // ---- shaking: one endpoint, what it does depends on the chapter ----
 
 /** A burst of shake energy (0..1) from a phone. */
@@ -304,8 +311,10 @@ export function giveWarm(r: Room, findId: string) {
   return false;
 }
 
+const isWarm = (r: Room) => r.entitlements.includes("jingle_scarf") || r.warmFinds.filter((x) => x.given).length >= warmNeeded(r);
+
 export function afterWarm(r: Room) {
-  if (r.chapter === "warm_jingle" && r.warmFinds.filter((x) => x.given).length >= warmNeeded(r)) enter(r, "door_key");
+  if (r.chapter === "warm_jingle" && isWarm(r)) enter(r, "door_key");
 }
 
 // ---- the door ----
@@ -637,14 +646,11 @@ export function setAlexa(r: Room, text: string, card?: AlexaCard) {
   r.alexa = { text, at: Date.now(), card };
 }
 
-/** A hint for the current chapter. After a few free ones, Grandpa's Hint Book is offered. */
+/** A hint for the current chapter. Hints are always free: nobody pays to get unstuck. */
 export function hint(r: Room) {
   const ch = chapterOf(r.chapter);
-  if (r.entitlements.includes("hint_book") || r.hintsUsed < FREE_HINTS) {
-    r.hintsUsed++;
-    return { available: true, chapter: ch.title, hint: ch.hint, freeHintsLeft: r.entitlements.includes("hint_book") ? "unlimited" : FREE_HINTS - r.hintsUsed };
-  }
-  return { available: false, chapter: ch.title, reason: "The free hints for tonight are used up.", offer: offerOf("hint_book") };
+  r.hintsUsed++;
+  return { chapter: ch.title, hint: ch.hint };
 }
 
 // ---- purchases (simulated: no money moves) ----
@@ -727,13 +733,17 @@ export function approveCheckout(r: Room, checkoutId: string, playerId: string, y
 export function completePurchase(r: Room, productId: ProductId, channel: Checkout["channel"], receiptId?: string) {
   const p = PRODUCTS[productId];
   if (!p) throw new GameError("Unknown product.");
-  if (!r.entitlements.includes(productId)) r.entitlements.push(productId);
+  const isNew = !r.entitlements.includes(productId);
+  if (isNew) r.entitlements.push(productId);
+  // The scarf is the other way through the cold chapter: Jingle is warm at once.
+  const warmed = isNew && productId === "jingle_scarf" && r.chapter === "warm_jingle";
+  if (warmed) say(r, "A scarf! And it's green, my favourite. Ahhh, I'm toasty from beak to tail! Now, to the workshop door!", "happy");
   const id = r.checkout?.productId === productId ? r.checkout.id : randomUUID().slice(0, 8);
   r.checkout = {
     id, productId, channel, status: "completed", requestedBy: null, total: p.price + p.tax,
     receiptId: (receiptId ?? `GW-${randomBytes(3).toString("hex").toUpperCase()}`).slice(0, 64), at: Date.now(),
   };
-  return { status: "completed" as const, receiptId: r.checkout.receiptId, title: p.title };
+  return { status: "completed" as const, receiptId: r.checkout.receiptId, title: p.title, warmed };
 }
 
 export function purchaseStatus(r: Room) {

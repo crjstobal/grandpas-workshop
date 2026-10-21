@@ -114,7 +114,7 @@ export interface IcingStroke {
 
 export type FinalePhase = "arrival" | "cookie" | "letter" | "store";
 
-export type ProductId = "snowed_in_sleigh" | "hint_book";
+export type ProductId = "snowed_in_sleigh" | "jingle_scarf";
 
 export interface Product {
   id: ProductId;
@@ -126,6 +126,7 @@ export interface Product {
   price: number;
   /** Estimated tax for the simulated checkout breakdown. */
   tax: number;
+  /** story: a new adventure; extra: something cosmetic for tonight's game. */
   kind: "story" | "extra";
 }
 
@@ -182,7 +183,7 @@ export interface PublicState {
   alexa: { text: string; at: number; card?: AlexaCard } | null;
   entitlements: ProductId[];
   checkout: Checkout | null;
-  /** Free hints used before the Hint Book is offered. */
+  /** Hints Alexa gave tonight (they are always free). */
   hintsUsed: number;
 }
 

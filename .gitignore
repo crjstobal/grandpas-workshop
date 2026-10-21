@@ -13,3 +13,4 @@ art/renders/
 .tunnel-url
 .vega-*.log
 art/blender/tex/*.exr
+__pycache__/

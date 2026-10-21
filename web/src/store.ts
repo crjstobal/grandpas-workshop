@@ -5,7 +5,7 @@
 //
 //   web to shell:  window.ReactNativeWebView.postMessage(JSON.stringify(
 //                    { type: "iap", action: "purchase", sku, requestId }))
-//                  where sku is `gw.${productId}` ("gw.snowed_in_sleigh", "gw.hint_book").
+//                  where sku is `gw.${productId}` ("gw.snowed_in_sleigh", "gw.jingle_scarf").
 //
 //   shell to web:  window.dispatchEvent(new CustomEvent("gw-iap",
 //                    { detail: { requestId, ok, status, receiptId, error } }))

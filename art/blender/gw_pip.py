@@ -1,5 +1,6 @@
 """Jingle (formerly Pip), Grandpa's clockwork robin, with a small brass jingle bell at his neck.
-pip(pose='sleep'|'awake'|'cold'|'fly_a'|'fly_b'). Origin = centre of the perch bar he grips (bar along X),
+pip(pose='sleep'|'awake'|'cold'|'fly_a'|'fly_b', scarf=False). scarf=True adds the knitted scarf the family can
+buy him in the cold chapter (he keeps it on for the rest of the night). Origin = centre of the perch bar he grips (bar along X),
 facing -Y. About 0.21 m tall awake. fly_a = wings up, fly_b = wings down (feet tucked)."""
 import math
 
@@ -49,8 +50,10 @@ def jingle_bell(name, loc, M, parent, s=1.0):
     c = Vector((0, 0, -0.01 * s - r))
     sphere(name + "_ball", r, tuple(c), M["bell"], parent=root, seg=32, rings=16)
     torus(name + "_band", r * 1.0, 0.0011 * s, tuple(c), M["dark"], parent=root, seg=32, mseg=6)
-    sl = box(name + "_slot", (r * 1.5, 0.003 * s, r * 0.5), tuple(c + Vector((0, -r * 0.62, -r * 0.55))), M["slot"],
-             parent=root, rot=(math.radians(-40), 0, 0))
+    # a thin slit lying on the lower front of the ball (tangent to it), not a plate sticking out: seen head-on
+    # the old slab read as a black mouth under Jingle's beak
+    sl = box(name + "_slot", (r * 1.25, 0.002 * s, r * 0.13), tuple(c + Vector((0, -r * 0.745, -r * 0.625))), M["slot"],
+             parent=root, rot=(math.radians(40), 0, 0))
     for sx in (-1, 1):
         sphere(f"{name}_hole{sx}", r * 0.18, tuple(c + Vector((sx * r * 0.75, -r * 0.45, -r * 0.45))), M["slot"],
                parent=root, seg=10, rings=5)
@@ -101,7 +104,79 @@ def _shell(name, src, center, r, mat, parent, grow=1.012):
     return s
 
 
-def pip(name="pip", pose="awake", loc=(0, 0, 0), rot_z=0.0):
+def _knit_mat():
+    """Chunky Christmas-green wool (it has to stand out against his red breast and the brass): felt fuzz
+    plus knitted ribs (a wave texture) in the bump."""
+    m = bpy.data.materials.get("jingle_knit")
+    if m:
+        return m
+    m = felt("jingle_knit", (0.012, 0.11, 0.03))
+    nt = m.node_tree
+    b = K._bsdf(m)
+    b.inputs["Sheen Weight"].default_value = 0.3
+    wave = nt.nodes.new("ShaderNodeTexWave")
+    wave.wave_type, wave.bands_direction = "BANDS", "Z"
+    wave.inputs["Scale"].default_value = 160.0
+    wave.inputs["Distortion"].default_value = 2.0
+    bump = nt.nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.45
+    nt.links.new(wave.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
+    return m
+
+
+def _cream_knit():
+    return felt("jingle_knit_cream", (0.8, 0.72, 0.58))
+
+
+def _strip(name, pts, width, thick, mat, parent, out=Vector((0, -1, 0))):
+    """A soft flat band (a scarf tail) along pts, its width across the body, its face towards 'out'."""
+    verts, faces = [], []
+    pts = [Vector(p) for p in pts]
+    for i, p in enumerate(pts):
+        t = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        side = t.cross(out).normalized() * (width / 2)
+        verts += [tuple(p - side), tuple(p + side)]
+        if i:
+            faces.append((2 * i - 2, 2 * i - 1, 2 * i + 1, 2 * i))
+    o = mesh_obj(name, verts, faces, parent=parent, smooth=True, mat=mat)
+    so = o.modifiers.new("solid", "SOLIDIFY")
+    so.thickness, so.offset = thick, 0.0
+    sub = o.modifiers.new("sub", "SUBSURF")
+    sub.levels = sub.render_levels = 2
+    return o
+
+
+def _scarf(name, M, body_g):
+    """A thick green wrap round his neck, knotted at his right shoulder, two tails down his breast with
+    cream stripes at the ends. The bell hangs out below the wrap."""
+    knit, cream = _knit_mat(), _cream_knit()
+    w = torus(f"{name}_scarf_wrap", 0.05, 0.0145, (0, -0.016, 0.126), knit, parent=body_g, seg=56, mseg=18)
+    w.rotation_euler = (math.radians(-20), 0, 0)
+    w.scale = (1.0, 1.0, 0.85)
+    sphere(f"{name}_scarf_knot", 0.016, (0.036, -0.062, 0.122), knit, scale=(1.0, 0.8, 0.9), parent=body_g,
+           seg=24, rings=12)
+    tails = (
+        ([(0.038, -0.07, 0.115), (0.044, -0.082, 0.092), (0.047, -0.085, 0.068), (0.048, -0.082, 0.046)], 0.022),
+        ([(0.028, -0.074, 0.114), (0.026, -0.088, 0.092), (0.025, -0.092, 0.074)], 0.02),
+    )
+    for i, (pts, wd) in enumerate(tails):
+        _strip(f"{name}_scarf_tail{i}", pts, wd, 0.006, knit, body_g)
+        # two cream stripes near the end of each tail
+        p0, p1 = Vector(pts[-2]), Vector(pts[-1])
+        for k, t in enumerate((0.35, 0.7)):
+            c = p0.lerp(p1, t)
+            d = (p1 - p0).normalized() * 0.003
+            _strip(f"{name}_scarf_stripe{i}{k}", [tuple(c - d), tuple(c + d)], wd * 1.04, 0.0068, cream, body_g)
+    # fringe at the end of the long tail
+    end = Vector(tails[0][0][-1])
+    for k in range(5):
+        x = end.x - 0.008 + k * 0.004
+        curve_tube(f"{name}_scarf_fringe{k}", [(x, end.y, end.z), (x + 0.0005, end.y + 0.001, end.z - 0.01)], 0.0013,
+                   cream, parent=body_g)
+
+
+def pip(name="pip", pose="awake", loc=(0, 0, 0), rot_z=0.0, scarf=False):
     M = _mats()
     _feather_enamel(M["enamel"])
     sleep = pose == "sleep"
@@ -146,6 +221,8 @@ def pip(name="pip", pose="awake", loc=(0, 0, 0), rot_z=0.0):
     # neck collar
     collar = torus(name + "_collar", 0.035, 0.0055, (0, -0.022, 0.131), M["copper"], parent=body_g, seg=48, mseg=12)
     collar.rotation_euler = (math.radians(-28), 0, 0)
+    if scarf:
+        _scarf(name, M, body_g)
     # tail fan
     tail_g = empty(name + "_tailg", (0, 0.07, 0.068), body_g)
     tail_g.rotation_euler = (math.radians(-18 if sleep else (-6 if fly else (-28 if cold else -38))), 0, 0)

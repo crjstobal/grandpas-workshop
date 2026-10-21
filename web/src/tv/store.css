@@ -94,6 +94,8 @@
 .store-tile.owned { box-shadow: 0 0 0 3px #4fd18b66, 0 10px 30px #0007; }
 .store-tile.owned.focus { box-shadow: 0 0 0 5px var(--st-focus), 0 0 40px #4fd18b55, 0 28px 60px #000c; }
 
+.scarf-art { background: radial-gradient(circle at 50% 38%, #d98a3c 0, #7a3d17 45%, #2a1409 100%); }
+.scarf-art img { position: absolute; left: 50%; top: 4%; height: 82%; transform: translateX(-50%) scaleX(-1); filter: drop-shadow(0 14px 16px #000a); }
 .store-tile.soon .tile-art { filter: grayscale(0.55) brightness(0.8); }
 .store-tile.soon.focus .tile-art { filter: grayscale(0.25); }
 .soon-pill { position: absolute; z-index: 2; top: 20px; left: 22px; padding: 4px 16px; border-radius: 10px; font-size: 28px; font-weight: 800; color: var(--st-text); background: #0b1320cc; border: 2px solid #ffffff44; }

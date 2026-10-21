@@ -5,7 +5,7 @@ Grandpa's Workshop sells two optional, buy-once items through the Amazon Appstor
 | SKU | Title | Type | Price |
 |-----|-------|------|-------|
 | `gw.snowed_in_sleigh` | The Snowed-In Sleigh | ENTITLED | $2.99 |
-| `gw.hint_book` | Grandpa's Hint Book | ENTITLED | $0.99 |
+| `gw.jingle_scarf` | Jingle's Knitted Scarf | ENTITLED | $0.99 |
 
 The game is a web page inside the Vega WebView, and a web page cannot call the Vega IAP API.
 So the React Native shell (`src/App.tsx`, `src/iap.ts`) does the purchasing and talks to the
@@ -16,7 +16,7 @@ page through a small message bridge.
 **Page to shell** (`window.ReactNativeWebView.postMessage(JSON.stringify(msg))`):
 
 ```js
-{ type: "iap", action: "purchase", sku: "gw.hint_book", requestId: "abc" }
+{ type: "iap", action: "purchase", sku: "gw.jingle_scarf", requestId: "abc" }
 { type: "iap", action: "products", requestId: "abc" }
 { type: "iap", action: "restore",  requestId: "abc" }
 ```
@@ -116,7 +116,7 @@ App Tester answers the IAP calls in sandbox mode from a local JSON file
    vega run-app build/aarch64-debug/grandpasworkshop_aarch64.vpkg com.grandpasworkshop.tv.main -d VirtualDevice
    ```
 
-6. **Buy.** Trigger a purchase in the game. App Tester shows "Grandpa's Hint Book, $0.99,
+6. **Buy.** Trigger a purchase in the game. App Tester shows "Jingle's Knitted Scarf, $0.99,
    Cancel / Get Item". Press OK on "Get Item", then OK on "Close" in "Thank You! Your order is
    complete". The page gets `status: "SUCCESSFUL"` only after "Close". From a script:
    ```sh
@@ -124,7 +124,7 @@ App Tester answers the IAP calls in sandbox mode from a local JSON file
    ```
 
 7. **Check restore.** Relaunch the game: the `startup` event now lists
-   `entitlements: ["gw.hint_book"]`. Buying it again shows "You already own this item." and
+   `entitlements: ["gw.jingle_scarf"]`. Buying it again shows "You already own this item." and
    returns `ALREADY_PURCHASED`.
 
 8. **Reset.** In App Tester, "Manage Transactions" deletes test purchases. Every change to

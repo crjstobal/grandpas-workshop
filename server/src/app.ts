@@ -68,6 +68,10 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
   // The remote's OK button, in chapters that are pure story.
   app.post("/api/rooms/:code/advance", (c) => c.json({ chapter: rooms.mutate(c.req.param("code"), game.advance) }));
 
+  // Offline development only: jump to any chapter to check its screen.
+  if (MOCK) app.post("/api/rooms/:code/dev/goto/:chapter", (c) =>
+    c.json({ chapter: rooms.mutate(c.req.param("code"), (r) => game.devGoto(r, c.req.param("chapter") as never)) }));
+
   app.post("/api/rooms/:code/skip-turn", (c) => {
     rooms.mutate(c.req.param("code"), game.skipTurn);
     return c.body(null, 204);
@@ -176,6 +180,7 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
         : "I didn't get permission. That's okay, let's keep playing.", card);
       return res;
     });
+    if ("warmed" in out && out.warmed) rooms.later(code, 7_000, game.afterWarm);
     return c.json(out);
   });
 
@@ -184,7 +189,9 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
   app.post("/api/rooms/:code/purchase/appstore", async (c) => {
     const { productId, receiptId } = await c.req.json<{ productId: string; receiptId?: string }>();
     const code = c.req.param("code");
-    return c.json(rooms.mutate(code, (r) => game.completePurchase(r, String(productId ?? "") as never, "appstore", receiptId ? String(receiptId) : undefined)));
+    const out = rooms.mutate(code, (r) => game.completePurchase(r, String(productId ?? "") as never, "appstore", receiptId ? String(receiptId) : undefined));
+    if (out.warmed) rooms.later(code, 7_000, game.afterWarm);
+    return c.json(out);
   });
 
   // ---- simulated Alexa+ ----

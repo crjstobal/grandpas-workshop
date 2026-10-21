@@ -125,6 +125,11 @@ function mockTalk(code: string, message: string): AlexaReply {
       if (c.status === "awaiting_confirmation") game.confirmCheckout(r, c.id, false); else c.status = "declined";
       return { text: "No problem. You can ask me about it anytime." };
     }
+    if (r.chapter === "warm_jingle" && /scarf|cold|warm|freez/.test(said)) {
+      game.offer(r, "jingle_scarf");
+      const p = PRODUCTS.jingle_scarf;
+      return { text: `Jingle is freezing! Show him something cosy from your house, or I can get him ${p.title}. Want to learn more?`, card: { type: "offer", productId: p.id, title: p.title, body: p.pitch, cta: "Learn more" } };
+    }
     if (/buy|sleigh|story|adventure/.test(said)) {
       game.offer(r, "snowed_in_sleigh");
       const p = PRODUCTS.snowed_in_sleigh;
@@ -135,11 +140,7 @@ function mockTalk(code: string, message: string): AlexaReply {
       return { text: `You're on chapter ${st.chapter.number}, ${st.chapter.title}. ${st.whatToDoNow}` };
     }
     const h = game.hint(r);
-    if (!h.available) {
-      game.offer(r, "hint_book");
-      return { text: `You've used tonight's free hints. Grandpa's Hint Book gives your family a nudge whenever you're stuck. Want to learn more?`, card: { type: "offer", productId: "hint_book", title: PRODUCTS.hint_book.title, body: PRODUCTS.hint_book.pitch, cta: "Learn more" } };
-    }
-    return { text: `Here's a hint. ${h.hint}`, card: { type: "hint", title: h.chapter, body: h.hint! } };
+    return { text: `Here's a hint. ${h.hint}`, card: { type: "hint", title: h.chapter, body: h.hint } };
   });
   rooms.mutate(code, (x) => game.setAlexa(x, out.text, out.card));
   return { text: out.text, tools: [], card: out.card };

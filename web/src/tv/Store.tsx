@@ -1,5 +1,5 @@
 // "More from Grandpa's Workshop": the Fire TV store screen after Grandpa's letter.
-// A hero tile for the next adventure, a row with the Hint Book and the stories coming soon.
+// A hero tile for the next adventure, a row with Jingle's scarf and the stories coming soon.
 // D-pad moves the focus (up/down between rows, left/right along a row), OK buys.
 // Purchases go through the Fire TV shell (Amazon In-App Purchasing) or, in a desktop browser,
 // through the simulated Appstore dialog.
@@ -16,7 +16,7 @@ import "./store.css";
 type TileId = ProductId | `soon-${number}`;
 interface Toast { kind: "busy" | "ok" | "info"; text: string; at: number }
 
-const ROW: TileId[] = ["hint_book", ...COMING_SOON.map((_, i) => `soon-${i}` as TileId)];
+const ROW: TileId[] = ["jingle_scarf", ...COMING_SOON.map((_, i) => `soon-${i}` as TileId)];
 const price = (id: ProductId) => `$${PRODUCTS[id].price.toFixed(2)}`;
 
 export function Store({ state }: { state: PublicState }) {
@@ -87,7 +87,7 @@ export function Store({ state }: { state: PublicState }) {
 
   const setRef = (id: TileId) => (el: HTMLButtonElement | null) => { if (el) refs.current.set(id, el); else refs.current.delete(id); };
   const sleighOwned = owned("snowed_in_sleigh");
-  const bookOwned = owned("hint_book");
+  const scarfOwned = owned("jingle_scarf");
 
   return (
     <div className="store" aria-label="More from Grandpa's Workshop">
@@ -123,15 +123,15 @@ export function Store({ state }: { state: PublicState }) {
       </button>
 
       <div className="store-row">
-        <button ref={setRef("hint_book")} tabIndex={0}
-          className={`store-tile ${focused === "hint_book" ? "focus" : ""} ${bookOwned ? "owned" : ""}`}
-          onClick={() => pressOk(() => { setRow(1); setCol(0); activate("hint_book"); })}>
-          <HintBookArt />
+        <button ref={setRef("jingle_scarf")} tabIndex={0}
+          className={`store-tile ${focused === "jingle_scarf" ? "focus" : ""} ${scarfOwned ? "owned" : ""}`}
+          onClick={() => pressOk(() => { setRow(1); setCol(0); activate("jingle_scarf"); })}>
+          <ScarfArt />
           <div className="tile-copy">
-            <h3>{PRODUCTS.hint_book.title}</h3>
-            {bookOwned
-              ? <span className="tile-meta owned"><CheckIcon /> Unlocked</span>
-              : <span className="tile-meta">{busy === "hint_book" ? "Opening the Appstore..." : <>Extra · <b>{price("hint_book")}</b></>}</span>}
+            <h3>{PRODUCTS.jingle_scarf.title}</h3>
+            {scarfOwned
+              ? <span className="tile-meta owned"><CheckIcon /> Jingle is wearing it</span>
+              : <span className="tile-meta">{busy === "jingle_scarf" ? "Opening the Appstore..." : <>Extra · <b>{price("jingle_scarf")}</b></>}</span>}
           </div>
         </button>
         {COMING_SOON.map((s, i) => {
@@ -252,36 +252,12 @@ function SleighArt() {
   );
 }
 
-function HintBookArt() {
+/** Jingle wearing the scarf, on a warm fireside glow. */
+function ScarfArt() {
   return (
-    <svg className="tile-art" viewBox="0 0 560 320" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      <defs>
-        <radialGradient id="st-desk" cx="0.62" cy="0.3" r="0.8">
-          <stop offset="0" stopColor="#9a5b2c" />
-          <stop offset="0.55" stopColor="#4e2c15" />
-          <stop offset="1" stopColor="#24140a" />
-        </radialGradient>
-        <linearGradient id="st-leather" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#8f3a24" />
-          <stop offset="1" stopColor="#4a1a10" />
-        </linearGradient>
-      </defs>
-      <rect width="560" height="320" fill="url(#st-desk)" />
-      <g transform="translate(300 40) rotate(8)">
-        <rect x="8" y="12" width="190" height="236" rx="10" fill="#1a0e07" opacity="0.5" />
-        <rect x="0" y="0" width="190" height="236" rx="10" fill="#efe2c4" />
-        <rect x="-6" y="-4" width="190" height="236" rx="10" fill="url(#st-leather)" stroke="#c8963e" strokeWidth="3" />
-        <rect x="-6" y="-4" width="26" height="236" rx="6" fill="#3a140b" />
-        <path d="M100 66l14 30 33 3-25 22 8 32-30-18-30 18 8-32-25-22 33-3z" fill="#ffd36b" stroke="#a8761f" strokeWidth="3" strokeLinejoin="round" />
-        <rect x="40" y="186" width="120" height="8" rx="4" fill="#c8963e" opacity="0.7" />
-        <rect x="170" y="100" width="22" height="34" rx="5" fill="#c8963e" stroke="#8a6224" strokeWidth="3" />
-        <path d="M150 232 v48 l10 -10 10 10 v-48" fill="#b23a2e" />
-        <path d="M-6 22 V6 Q-6 -4 4 -4 H20 Z M184 22 V6 Q184 -4 174 -4 H158 Z M-6 210 V222 Q-6 232 4 232 H20 Z M184 210 V222 Q184 232 174 232 H158 Z" fill="#e5b25a" />
-      </g>
-      {Array.from({ length: 7 }, (_, i) => (
-        <circle key={i} cx={120 + i * 24} cy={80 + ((i * 37) % 70)} r={2 + (i % 3)} fill="#ffe9a8" opacity="0.7" />
-      ))}
-    </svg>
+    <div className="tile-art scarf-art" aria-hidden>
+      <img src="/scenes/jingle_fly_a_scarf.png" alt="" />
+    </div>
   );
 }
 

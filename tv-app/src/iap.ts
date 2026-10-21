@@ -31,7 +31,7 @@ const iap = (): typeof PurchasingServiceType => {
 };
 
 /** The only SKUs the game sells. Both are ENTITLED (buy once, owned on every device). */
-export const SKUS = ['gw.snowed_in_sleigh', 'gw.hint_book'] as const;
+export const SKUS = ['gw.snowed_in_sleigh', 'gw.jingle_scarf'] as const;
 
 export type IapStatus =
   | 'SUCCESSFUL'

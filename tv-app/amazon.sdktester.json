@@ -5,10 +5,10 @@
     "title": "The Snowed-In Sleigh",
     "description": "A bonus chapter: Grandpa's sleigh is stuck in the snow and the whole family has to dig it out before Christmas Eve."
   },
-  "gw.hint_book": {
+  "gw.jingle_scarf": {
     "itemType": "ENTITLED",
     "price": 0.99,
-    "title": "Grandpa's Hint Book",
-    "description": "Grandpa's own notebook with a gentle hint for every puzzle in the workshop."
+    "title": "Jingle's Knitted Scarf",
+    "description": "A green knitted scarf for Jingle. It warms him up straight away, and he wears it for the rest of the night."
   }
 }

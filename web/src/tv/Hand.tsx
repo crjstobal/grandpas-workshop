@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } fr
 import type { JingleMood } from "../../../shared/types";
 import { sfx } from "../sfx";
 import { pressOk } from "./remote";
+import { flySprite } from "./look";
 
 export interface Hotspot {
   id: string;
@@ -152,7 +153,7 @@ function JingleFlying({ pecking, facing, moving, mood }: { pecking: boolean; fac
   }, [moving]);
   const choices = [
     ...(mood === "cold" ? ["/scenes/jingle_cold.png"] : []),
-    `/scenes/jingle_fly_${frame ? "b" : "a"}.png`,
+    flySprite(frame),
     "/scenes/jingle_awake.png",
   ];
   const img = choices[skip];

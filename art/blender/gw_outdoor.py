@@ -67,9 +67,9 @@ def frost_dusting(root, seed=7, step=0.0032, p=0.55, rmin=0.0012, rmax=0.0038, p
     return o
 
 
-def jingle(name, pose, loc, rot_z, frost=True, seed=7):
+def jingle(name, pose, loc, rot_z, frost=True, seed=7, scarf=False):
     """Jingle built at the origin, frosted (sleep and cold poses), then moved to loc / rot_z."""
-    r = pip(name, pose, (0, 0, 0), rot_z=0.0)
+    r = pip(name, pose, (0, 0, 0), rot_z=0.0, scarf=scarf)
     if frost and pose in ("sleep", "cold"):
         if pose == "sleep":
             head = bpy.data.objects[name + "_head"]

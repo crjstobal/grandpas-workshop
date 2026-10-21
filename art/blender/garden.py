@@ -4,9 +4,10 @@ workshop, is soft out-of-focus garden and sky for the UI.
 
   ... --python garden.py -- --out DIR [--fast]               -> DIR/garden.png  (Jingle asleep, frosted)
   ... --python garden.py -- --out DIR --empty                -> DIR/garden_empty.png (same frame, no Jingle)
-  ... --python garden.py -- --out DIR --pip sleep|cold|awake -> DIR/garden_jingle_<pose>.png: RGBA crop of the
-      box in garden_jingle.json, rendered with this camera and these lights; the snow under him is a shadow
-      catcher so his contact shadow comes with the sprite. Draw it at x,y scaled to size x size on garden_empty.
+  ... --python garden.py -- --out DIR --cropempty            -> DIR/garden_crop_empty.png (the sprite box, no Jingle)
+  ... --python garden.py -- --out DIR --pip POSE [--scarf] [--matte] -> DIR/garden_jingle_<pose>[_scarf]_full|matte.png
+      then garden_sprite.py DIR turns those into garden_jingle_<pose>.png: an RGBA crop of the box in
+      garden_jingle.json. Draw it at x,y scaled to size x size on garden_empty.
 The box (and Jingle's exact silhouette on garden.jpg) is written to DIR/garden_jingle.json by the plain run.
 """
 import json
@@ -21,10 +22,10 @@ from gw_outdoor import jingle, silhouette_px, frost_glass_disc, snow_slab, snow_
 from gw_pip import pip_meshes
 from gw import K, bpy, Vector
 
-A = K.args(); OUT = A["out"]; FAST = bool(A.get("fast")); POSE = A.get("pip"); EMPTY = bool(A.get("empty"))
+A = K.args(); OUT = A["out"]; FAST = bool(A.get("fast")); POSE = A.get("pip"); SCARF = bool(A.get("scarf")); EMPTY = bool(A.get("empty"))
 HERE = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(OUT, exist_ok=True)
-sc = setup(1920, 1080, fast=FAST, samples=384 if not POSE else 256, exposure=float(A.get("exp", 0.0)))
+sc = setup(1920, 1080, fast=FAST, samples=384 if not (POSE or A.get("cropempty")) else 256, exposure=float(A.get("exp", 0.0)))
 night_sky(top=(0.005, 0.010, 0.035), horizon=(0.05, 0.085, 0.17), strength=1.0)
 
 ws = workshop()
@@ -152,14 +153,9 @@ def box_for(poses):
     return {"x": round(cx - side / 2), "y": round(cy - side / 2), "size": round(side)}
 
 
-if POSE:
+def crop_to_box():
+    """Renders only the sprite box, at 1024 px across."""
     bx = json.load(open(f"{HERE}/garden_jingle.json"))["sprite_box"]
-    j = jingle("jingle", POSE, tuple(JLOC), JRZ)
-    keep = pip_meshes(j)
-    make_holdout_others(keep + [ledge_snow])
-    ledge_snow.is_shadow_catcher = True
-    sc.render.film_transparent = True
-    sc.render.image_settings.color_mode = "RGBA"
     f = 1024.0 / bx["size"]
     sc.render.resolution_x, sc.render.resolution_y = round(1920 * f), round(1080 * f)
     sc.render.resolution_percentage = 100
@@ -167,8 +163,24 @@ if POSE:
     r.use_border, r.use_crop_to_border = True, True
     r.border_min_x, r.border_max_x = bx["x"] / 1920, (bx["x"] + bx["size"]) / 1920
     r.border_max_y, r.border_min_y = 1 - bx["y"] / 1080, 1 - (bx["y"] + bx["size"]) / 1080
-    sc.use_nodes = False
-    K.render(f"{OUT}/garden_jingle_{POSE}.png")
+
+
+if POSE or A.get("cropempty"):
+    # Sprites are cut out by difference: the box rendered with Jingle, the same box without him, and a
+    # matte of Jingle alone. garden_sprite.py keeps every pixel that changed (Jingle, his shadow, the
+    # dent in the snow), so the sprite melts into garden_empty with no visible edge. (A shadow catcher
+    # left the snow semi-opaque and a different shade, which showed as a square around him.)
+    crop_to_box()
+    sc.render.film_transparent = False
+    if POSE:
+        j = jingle("jingle", POSE, tuple(JLOC), JRZ, scarf=SCARF)
+        if A.get("matte"):
+            make_holdout_others(pip_meshes(j))
+            sc.render.film_transparent = True
+            sc.render.image_settings.color_mode = "RGBA"
+            sc.use_nodes = False
+    K.render(f"{OUT}/garden_jingle_{POSE}{'_scarf' if SCARF else ''}_{'matte' if A.get('matte') else 'full'}.png" if POSE
+             else f"{OUT}/garden_crop_empty.png")
 elif EMPTY:
     K.render(f"{OUT}/garden_empty.png")
 else:

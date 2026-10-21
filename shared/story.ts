@@ -83,7 +83,7 @@ export const CHAPTERS: Chapter[] = [
     narration: "Jingle is awake, but he has been out in the snow all night. His little gears are frozen stiff.",
     jingle: "Brrr! B-b-bring me something warm, please! Anything cosy from your house!",
     phoneTask: "Find something warm or cosy at home and show it to Jingle.",
-    hint: "Anything warm or cosy works: a sock, a blanket, a mug, a scarf, even a cat. Take a photo of it, then carry it to Jingle with the remote.",
+    hint: "Anything warm or cosy works: a sock, a blanket, a mug, a scarf, even a cat. Take a photo of it, then carry it to Jingle with the remote. Or buy him a knitted scarf from the tray on the TV.",
     remoteAdvances: false,
     turns: true,
   },
@@ -220,10 +220,10 @@ export const PRODUCTS: Record<ProductId, Product> = {
     tax: 0.24,
     kind: "story",
   },
-  hint_book: {
-    id: "hint_book",
-    title: "Grandpa's Hint Book",
-    pitch: "A gentle nudge from Grandpa on any puzzle, whenever your family is stuck.",
+  jingle_scarf: {
+    id: "jingle_scarf",
+    title: "Jingle's Knitted Scarf",
+    pitch: "A green knitted scarf for Jingle. It warms him up straight away, and he wears it for the rest of the night.",
     priceSpoken: "ninety-nine cents",
     price: 0.99,
     tax: 0.08,
@@ -236,6 +236,3 @@ export const COMING_SOON = [
   { title: "Jingle and the Northern Lights", pitch: "A trip to the top of the world to fix the lights in the sky." },
   { title: "The Lighthouse Keeper's Cat", pitch: "A seaside mystery for the whole family, one stormy night." },
 ];
-
-/** Free hints before Alexa offers Grandpa's Hint Book. */
-export const FREE_HINTS = 2;

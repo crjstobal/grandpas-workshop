@@ -40,7 +40,8 @@ Every chapter is a step towards lighting the star. The finale is Grandpa coming 
 Alexa is not a quiz bot bolted on: Grandpa asked her to watch over the family, so she
 - delivers Grandpa's message,
 - remembers the night (who brought what, who drew the key) and turns it into the memory lock,
-- gives hints (a couple are free; then she offers Grandpa's Hint Book),
+- gives hints (always free),
+- in the cold chapter, offers Jingle's Knitted Scarf as the other way to warm him up (a cosmetic he then wears all night),
 - sells the next adventure with an Alexa+ style checkout: offer, price plus tax, explicit yes,
   then the grown-up's approval on their phone, then a receipt,
 - picks up where the family left off: "Alexa, where did we leave Grandpa's Workshop?"

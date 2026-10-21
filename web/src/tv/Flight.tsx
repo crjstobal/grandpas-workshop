@@ -12,6 +12,7 @@ import type { PublicState } from "../../../shared/types";
 import { api } from "../api";
 import { playNote, sfx } from "../sfx";
 import "./Flight.css";
+import { flySprite } from "./look";
 
 // ---------------- tuning ----------------
 const W = 1920;
@@ -477,7 +478,7 @@ function createFlight(canvas: HTMLCanvasElement, cfg: {
     mid: midTile(rand),
     near: nearTile(rand),
   };
-  const bird = [loadImg("/scenes/jingle_fly_a.png"), loadImg("/scenes/jingle_fly_b.png")];
+  const bird = [loadImg(flySprite(0)), loadImg(flySprite(1))];
   const bg = loadImg("/scenes/roof.jpg");
 
   // World and Jingle.
@@ -1483,7 +1484,7 @@ export function Flight({ state, bubble }: { state: PublicState; bubble: { line: 
         <div className="fl-rail">
           <div className="fl-fill" ref={fill} />
           <div className="fl-marker-track">
-            <div className="fl-marker" ref={marker}><img src="/scenes/jingle_fly_a.png" alt="" /></div>
+            <div className="fl-marker" ref={marker}><img src={flySprite(0)} alt="" /></div>
           </div>
         </div>
         <div className={`fl-roof ${phase === "landed" ? "lit" : ""}`}><RoofIcon /></div>

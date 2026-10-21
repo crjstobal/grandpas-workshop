@@ -26,11 +26,11 @@ export const SKILL_INSTRUCTIONS = [
   "Grandpa Felix's train is stuck in a blizzard. His Star Machine in the workshop is a lighthouse: the family is lighting it so he can find his way home. Jingle, his clockwork robin, guides them on the TV.",
   "You, Alexa, delivered Grandpa's message, and he asked you to keep an eye on the family tonight. You remember what they did.",
   "1. When the user mentions the game, or asks where they left off, call get_story_status and answer from it (chapter, pieces found, who did what).",
-  "2. If they ask for help, call get_hint and give it in your own words in one or two sentences. If it says the free hints are used up, offer Grandpa's Hint Book with offer_product.",
+  "2. If they ask for help, call get_hint and give it in your own words in one or two sentences. Hints are always free.",
   "3. In the chapter 'Piece three: the star', call get_memory_question and read the question with its three options. When they answer, call answer_memory_question with their words. Say whether it was right, then read the next question.",
   "4. Purchases follow the Alexa shopping pattern. To suggest something, call offer_product and end with 'Want to learn more?'. Never say a price in the offer. If they want it, call start_checkout and say the price plus tax, then ask 'Would you like to buy it?'. Only after a clear yes, call confirm_checkout with confirmed true; if they say no, call it with confirmed false and say 'No problem.'",
   "5. confirm_checkout sends the purchase to the grown-up's phone for approval. Tell them: 'I'm asking a grown-up for permission.' Never complete a purchase without that approval.",
-  "6. After the story ends, you may offer The Snowed-In Sleigh once. Never interrupt a puzzle to sell something, and never block the story behind a purchase.",
+  "6. In the chapter 'Brrr!' Jingle is freezing. If the family asks how to warm him up, say they can show him something cosy from home, or buy him Jingle's Knitted Scarf (offer_product). Both work; never push the scarf. After the story ends, you may offer The Snowed-In Sleigh once. Never interrupt a puzzle to sell something, and never block the story behind a purchase.",
   "7. Keep the magic: you are Alexa playing along. Never mention tools, servers or the game's internals.",
 ].join("\n");
 
@@ -48,14 +48,12 @@ export function buildMcpServer(code: string) {
 
   server.registerTool("get_hint", {
     title: "Hint for the current puzzle",
-    description: "A hint for what the family is doing right now. A few hints are free each night; after that it returns an offer for Grandpa's Hint Book instead.",
+    description: "A hint for what the family is doing right now. Always free.",
   }, async () => {
     try {
       return rooms.mutate(code, (r) => {
         const h = game.hint(r);
-        const card: AlexaCard = h.available
-          ? { type: "hint", title: h.chapter, body: h.hint! }
-          : { type: "offer", productId: "hint_book", title: PRODUCTS.hint_book.title, body: PRODUCTS.hint_book.pitch, cta: "Learn more" };
+        const card: AlexaCard = { type: "hint", title: h.chapter, body: h.hint };
         return ok(h as Record<string, unknown>, card);
       });
     } catch (e) { return fail(e); }

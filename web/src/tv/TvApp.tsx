@@ -27,6 +27,10 @@ import { AlexaOverlay } from "./AlexaOverlay";
 import { AlexaCardView } from "../alexa/AlexaCard";
 import { DOOR, HOOKS, PHONOGRAPH, SHELF, GARDEN, type FunSpot } from "./spots";
 import { pressOk, useRemote, useStageScale } from "./remote";
+import { flySprite, setScarf } from "./look";
+import { AppstoreDialogHost, usePurchaseDialogOpen } from "./AppstoreDialog";
+import { buy, hasAppstore } from "../store";
+import { PRODUCTS } from "../../../shared/story";
 
 const HELP = "Arrows fly Jingle · OK picks";
 /** How long the family has to decorate the gingerbread before Grandpa takes it anyway. */
@@ -163,7 +167,7 @@ export default function TvApp() {
       case "record":
         if (!s.recordPlaying) {
           return {
-            hand: <Hand bubble={bubble} mood={s.jingle.mood} help="Put the record on the gramophone · OK" hotspots={[PHONOGRAPH.gramophone, ...PHONOGRAPH.fun]} start={{ x: 1300, y: 800 }}
+            hand: <Hand bubble={bubble} mood={s.jingle.mood} help="Put the record on the gramophone · OK" hotspots={[PHONOGRAPH.gramophone, ...PHONOGRAPH.fun]} start={{ x: 1480, y: 560 }}
               carrying={<div className="carry-record" />}
               onPick={(h) => {
                 if (!h) return missed();
@@ -184,7 +188,8 @@ export default function TvApp() {
           : trayOf(tray).map((t) => t.spot);
         const held = s.ornaments.find((o) => o.id === carry);
         return {
-          overlay: <><Tray finds={tray} hidden={carry} state={s} title={`Ornaments ${s.ornaments.length} of ${s.ornamentsNeeded}`} round /><HungOrnaments state={s} /></>,
+          overlay: <><Tray finds={tray} hidden={carry} state={s} title={`Ornaments ${s.ornaments.length} of ${s.ornamentsNeeded}`} round
+            empty={s.ornaments.length ? "Scan another one, or wait for the others" : "Draw an ornament on paper, then scan it with a phone"} /><HungOrnaments state={s} /></>,
           hand: <Hand bubble={bubble} mood={s.jingle.mood} help={carry ? "Hang it on a hook · OK" : tray.length ? HELP : "Draw an ornament and scan it"} hotspots={spots} start={{ x: 500, y: 600 }}
             carrying={held && <img className="carry-ornament" src={held.imageUrl} alt="" />}
             onPick={(h) => {
@@ -216,6 +221,7 @@ export default function TvApp() {
     }
   }
 
+  setScarf(!!state?.entitlements.includes("jingle_scarf"));
   const showJingle = state && jingle && !handActive && !["lobby", "message", "workshop", "finale", "memory", "flight", "record", "globe"].includes(state.chapter);
   return (
     <div className="tv-viewport">
@@ -430,23 +436,40 @@ function PieceIcon({ id }: { id: string }) {
   return <svg viewBox="0 0 40 40" className="piece-icon"><path d="M20 3l5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z" fill="currentColor" /></svg>;
 }
 
-/** Jingle is frozen on the window ledge: pick a warm thing with the arrows and OK sends it to him. */
+/** Jingle is frozen on the window ledge: pick a warm thing with the arrows and OK sends it to him.
+ * The other way to warm him is the last item: buying him a knitted scarf in the Appstore. */
 function WarmTray({ state, onError }: { state: PublicState; onError: (e: unknown) => void }) {
   const tray = state.warmFinds.filter((f) => !f.given);
+  const scarfOwned = state.entitlements.includes("jingle_scarf");
+  const scarfAt = tray.length; // the scarf comes after the warm things
   const [focus, setFocus] = useState(0);
   const [flying, setFlying] = useState<string | null>(null);
-  useEffect(() => { setFocus((f) => Math.min(f, Math.max(0, tray.length - 1))); }, [tray.length]);
+  const [buying, setBuying] = useState<string | null>(null);
+  const dialogOpen = usePurchaseDialogOpen();
+  useEffect(() => { setFocus((f) => Math.min(f, scarfAt)); }, [scarfAt]);
+  const buyScarf = async () => {
+    if (buying || scarfOwned) return;
+    setBuying(hasAppstore() ? "Opening the Amazon Appstore..." : "Opening the Appstore preview...");
+    try {
+      const r = await buy("jingle_scarf");
+      if (r.ok) { sfx.chime(); sfx.sparkle(); await api.appstorePurchase(state.code, "jingle_scarf", r.receiptId); setBuying(null); }
+      else { sfx.boing(); setBuying("No scarf this time. Nothing was charged."); setTimeout(() => setBuying(null), 3000); }
+    } catch (e) { setBuying(null); onError(e); }
+  };
   useRemote({
     left: () => { setFocus((f) => Math.max(0, f - 1)); sfx.hover(); },
-    right: () => { setFocus((f) => Math.min(tray.length - 1, f + 1)); sfx.hover(); },
+    right: () => { setFocus((f) => Math.min(scarfAt, f + 1)); sfx.hover(); },
+    down: () => { setFocus(scarfAt); sfx.hover(); },
+    up: () => { if (tray.length) { setFocus(0); sfx.hover(); } },
     ok: () => {
+      if (focus === scarfAt) { void buyScarf(); return; }
       const f = tray[focus];
       if (!f || flying) return;
       sfx.pop();
       setFlying(f.id);
       setTimeout(() => { setFlying(null); sfx.chime(); api.give(state.code, f.id).catch(onError); }, 900);
     },
-  });
+  }, !dialogOpen);
   const name = (id: string) => state.players.find((p) => p.id === id)?.name ?? "";
   const given = state.warmFinds.filter((f) => f.given);
   return (
@@ -462,11 +485,22 @@ function WarmTray({ state, onError }: { state: PublicState; onError: (e: unknown
           ))}
           {!tray.length && <p className="warm-empty"><PhoneIcon /> Take a photo of something warm with a phone</p>}
         </div>
+        {!scarfOwned && (
+          <div className={`warm-scarf ${focus === scarfAt ? "focus" : ""}`}>
+            <img src="/scenes/jingle_fly_a_scarf.png" alt="" />
+            <div>
+              <span className="warm-or">or</span>
+              <strong>Buy Jingle a knitted scarf</strong>
+              <span className="warm-price">{buying ?? <>Amazon Appstore · {`$${PRODUCTS.jingle_scarf.price.toFixed(2)}`}</>}</span>
+            </div>
+          </div>
+        )}
       </div>
+      <AppstoreDialogHost />
       <div className="warm-given" style={{ left: GARDEN.jingle.x - 160, top: GARDEN.jingle.y + 40 }}>
         {given.map((f, i) => <img key={f.id} src={f.imageUrl} alt={f.label} style={{ transform: `rotate(${(i % 2 ? 1 : -1) * (6 + i * 4)}deg) translateX(${i * 70}px)` }} />)}
       </div>
-      <div className="frost" style={{ opacity: Math.max(0, 1 - given.length / state.warmNeeded) * 0.8 }} />
+      <div className="frost" style={{ opacity: scarfOwned ? 0 : Math.max(0, 1 - given.length / state.warmNeeded) * 0.8 }} />
     </>
   );
 }
@@ -523,12 +557,15 @@ function trayOf(finds: Find[]) {
   });
 }
 
-function Tray({ finds, hidden, state, title, round }: { finds: Find[]; hidden: string | null; state: PublicState; title: string; round?: boolean }) {
+function Tray({ finds, hidden, state, title, round, empty }: { finds: Find[]; hidden: string | null; state: PublicState; title: string; round?: boolean; empty?: string }) {
   const name = (id: string) => state.players.find((p) => p.id === id)?.name ?? "";
   const items = trayOf(finds);
   return (
     <>
-      <div className="tray"><span className="tray-title">{title}</span></div>
+      <div className={`tray ${items.length ? "" : "empty"}`}>
+        <span className="tray-title">{title}</span>
+        {!items.length && empty && <p className="tray-empty"><PhoneIcon /> {empty}</p>}
+      </div>
       {items.map(({ find, spot }) => find.id === hidden ? null : (
         <figure key={find.id} className={`tray-item ${round ? "round" : ""}`} style={{ left: spot.x, top: spot.y }}>
           <img src={find.imageUrl} alt={find.label} />

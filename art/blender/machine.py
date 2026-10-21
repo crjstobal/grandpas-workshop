@@ -124,11 +124,14 @@ lan = import_ph("wooden_lantern_01", "stool_lantern")
 K.fit(lan, 0.3, "z")
 K.place(lan, -0.95, BACK - 0.75, on=K.meshes(st))
 lo, hi = K.bbox(lan)
-if LIT:
-    swap_glass(lan, glow_glass("pl_glass", 1900, 2.5))
-    c = (lo + hi) / 2
-    sphere("st_flame", 0.012, (c.x, c.y, lo.z + 0.1), emit("flame", K.kelvin(1800), 60.0), scale=(0.7, 0.7, 1.4))
-    K.light("POINT", (c.x, c.y, lo.z + 0.11), power=8, size=0.02, k=1900, name="stool_lantern_light")
+# Jingle lights this lantern when the family walks in (chapter 4), so it burns in both versions: the
+# only warm light in the dark room until the machine wakes.
+swap_glass(lan, glow_glass("pl_glass", 1900, 2.5))
+c = (lo + hi) / 2
+sphere("st_flame", 0.012, (c.x, c.y, lo.z + 0.1), emit("flame", K.kelvin(1800), 60.0), scale=(0.7, 0.7, 1.4))
+K.light("POINT", (c.x, c.y, lo.z + 0.11), power=float(A.get("lantern", 8 if LIT else 22)), size=0.02, k=1900,
+        name="stool_lantern_light")
+LANTERN = (c.x, c.y, lo.z + 0.11)
 fairy_lights("fl_wall", [(-2.6, BACK - 0.05, 2.45), (-1.3, BACK - 0.05, 2.42), (0.0, BACK - 0.05, 2.45), (1.3, BACK - 0.05, 2.42),
                          (2.6, BACK - 0.05, 2.45)], sag=0.16, per_span=8, strength=6.0, r=0.01, lit=LIT, seed=9)
 
@@ -241,7 +244,11 @@ if LIT:
             name="warm_halo").visible_camera = False
     bloom(float(A.get("bloomk", 0.45)), 1.0, 8)
 else:
-    bloom(0.2, 1.5, 7)
+    # lantern glow: a warm pool on the floor and the wall behind the stool, against the blue moonlight
+    K.light("AREA", (LANTERN[0] + 0.3, LANTERN[1] - 0.9, 0.9), LANTERN, power=float(A.get("lanfill", 40)), size=1.0,
+            k=2200, name="lantern_fill").visible_camera = False
+    amb.data.color = K.kelvin(6500)
+    bloom(0.35, 1.2, 7)
 
 name = "machine_lit" if LIT else "machine"
 K.save(f"{OUT}/{name}.blend")

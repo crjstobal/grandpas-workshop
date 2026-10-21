@@ -13,6 +13,7 @@ import { api } from "../api";
 import { musicBox } from "../music";
 import { sfx } from "../sfx";
 import "./DanceTv.css";
+import { flySprite } from "./look";
 
 type Phase = DanceState["phase"];
 type Bind = (key: string) => (el: HTMLElement | SVGElement | null) => void;
@@ -23,7 +24,6 @@ const HOME = { x: 960, y: 790 };
 const RANGE = { x0: 400, x1: 1520, y0: 430, y1: 820 };
 const STEP = 95;
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
-const SPRITES = ["/scenes/jingle_fly_a.png", "/scenes/jingle_fly_b.png"];
 
 type MoveKind = "spin" | "squash" | "hop" | "wobble";
 
@@ -179,7 +179,7 @@ export function DanceTv({ state, bubble }: { state: PublicState; bubble: { line:
           sim.frameT = 0;
           sim.frame = 1 - sim.frame;
           const img = parts.current["jingle.img"] as HTMLImageElement | undefined;
-          if (img) img.src = SPRITES[sim.frame];
+          if (img) img.src = flySprite(sim.frame);
         }
       }
       raf = requestAnimationFrame(loop);
@@ -210,7 +210,7 @@ export function DanceTv({ state, bubble }: { state: PublicState; bubble: { line:
 
       <div className="dt-jingle" ref={bind("jingle")}>
         <div className="dt-jingle-pose" ref={bind("jingle.pose")}>
-          <img ref={bind("jingle.img")} src={SPRITES[0]} alt="Jingle" />
+          <img ref={bind("jingle.img")} src={flySprite(0)} alt="Jingle" />
         </div>
         {phase === "freeze" && <div className="dt-ice" />}
         {phase === "caught" && d.caught === "Jingle" && <DizzyStars />}
