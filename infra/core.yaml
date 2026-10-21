@@ -122,7 +122,7 @@ Resources:
           ln -sfn /opt/node-v22.20.0-linux-arm64 /opt/node
           curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_arm64.tar.gz | tar -xz -C /usr/local/bin caddy
           useradd --system --create-home --home-dir /opt/gw gw || true
-          mkdir -p /etc/caddy /opt/gw/app
+          mkdir -p /etc/caddy /opt/gw/app /opt/gw/data
           cat > /etc/caddy/Caddyfile <<CADDY
           $HOST {
             encode gzip
@@ -159,6 +159,8 @@ Resources:
           Environment=GW_SECRETS_PROFILE=none
           Environment=GW_SECRETS_REGION=${AWS::Region}
           Environment=GW_SECRETS_PARAM=${VoiceKeyParameter}
+          # saved games live outside the release folder, so a deploy doesn't end anyone's game
+          Environment=GW_DATA_DIR=/opt/gw/data
           ExecStart=/opt/node/bin/node --import tsx server/src/node.ts
           Restart=always
           RestartSec=3
