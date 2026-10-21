@@ -39,8 +39,15 @@ export const ALEXA_LINES = {
   memoryDone: "That's all three! You remember everything. Grandpa's box is open.",
 } as const;
 
-/** The number engraved on the back of the key. It opens the drawer. Christmas Eve: 24 of December. */
-export const DRAWER_CODE = "2412";
+/** The drawer lock. The back of the key shows four of Grandpa's toys in order (on the phone), and a
+ * number is painted under each of those toys on the shelf (on the TV): together, Christmas Eve, 24 12. */
+export const DRAWER_TOYS = [
+  { id: "train", name: "the train", digit: "2", icon: "\u{1F682}" },
+  { id: "drum", name: "the drum", digit: "4", icon: "\u{1F941}" },
+  { id: "elephant", name: "the elephant", digit: "1", icon: "\u{1F418}" },
+  { id: "house", name: "the toy house", digit: "2", icon: "\u{1F3E0}" },
+] as const;
+export const DRAWER_CODE = DRAWER_TOYS.map((t) => t.digit).join("");
 
 /** The toy orchestra plays this many tunes, each one note longer. */
 export const ORCHESTRA_ROUNDS = 3;
@@ -111,10 +118,10 @@ export const CHAPTERS: Chapter[] = [
     id: "drawer",
     title: "Piece one: the heart gear",
     scene: "shelf",
-    narration: "Grandpa keeps his most precious things in the drawer under the toy shelf. It has a four number lock.",
-    jingle: "Grandpa engraves everything. Maybe the number is on something you already have?",
-    phoneTask: "Turn your key around on the phone. Something is written on the back.",
-    hint: "Spin the key you drew on the phone and read the back. Then fly Jingle to the lock on the TV, press OK and dial the numbers.",
+    narration: "Grandpa keeps his most precious things in the drawer under the toy shelf. It has a four number lock, and Grandpa always hides his numbers on his toys.",
+    jingle: "Turn your key around on the phone! Then fly me to those toys and I'll peek underneath.",
+    phoneTask: "Spin your key: the back shows four toys, in order. Find their numbers on the TV shelf.",
+    hint: "The back of the key on the phone shows four toys in order. Fly Jingle to each of those toys on the TV and press OK: a number is hidden under each one. Dial them on the lock in the key's order.",
     remoteAdvances: false,
   },
   {

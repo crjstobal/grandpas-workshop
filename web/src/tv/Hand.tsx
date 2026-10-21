@@ -124,7 +124,7 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
       <div className="hand" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
         {carrying && <div className="carry">{carrying}</div>}
         <JingleFlying key={tap} pecking={tap > 0} facing={facing} moving={moving} mood={mood} />
-        {showBubble && <div className={`bubble flying ${pos.x > 1250 ? "left" : "right"}`} key={bubble!.at}>{bubble!.line}</div>}
+        {showBubble && <div className={`bubble flying ${pos.x > 1250 ? "left" : "right"} ${pos.y < 380 ? "below" : ""}`} key={bubble!.at}>{bubble!.line}</div>}
       </div>
       {help && <div className="hand-help">{help}</div>}
     </>

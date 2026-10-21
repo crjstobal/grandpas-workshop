@@ -30,7 +30,7 @@ import { pressOk, useRemote, useStageScale } from "./remote";
 import { flySprite, setScarf } from "./look";
 import { AppstoreDialogHost, usePurchaseDialogOpen } from "./AppstoreDialog";
 import { buy, hasAppstore } from "../store";
-import { PRODUCTS } from "../../../shared/story";
+import { DRAWER_TOYS, PRODUCTS } from "../../../shared/story";
 
 const HELP = "Arrows fly Jingle · OK picks";
 /** How long the family has to decorate the gingerbread before Grandpa takes it anyway. */
@@ -45,6 +45,9 @@ export default function TvApp() {
   // What only the TV needs to know: what Jingle carries and which overlays are open.
   const [carry, setCarry] = useState<string | null>(null);
   const [lockOpen, setLockOpen] = useState(false);
+  /** Drawer toys Jingle has looked under (the numbers stay on the shelf as brass tags). */
+  const [found, setFound] = useState<string[]>([]);
+  useEffect(() => { if (state?.chapter !== "drawer") setFound([]); }, [state?.chapter]);
   const [localJingle, setLocalJingle] = useState<{ line: string; at: number } | null>(null);
   const [poke, setPoke] = useState<{ x: number; y: number; at: number } | null>(null);
   const [paused, setPaused] = useState(false);
@@ -60,7 +63,18 @@ export default function TvApp() {
     }
     if (creating.current) return;
     creating.current = true;
-    api.createRoom().then(setRoom).catch((e) => setFlash(e.message));
+    // A reload (or the Fire TV app reopening) picks the game up where it was, if the server still
+    // has it and it isn't over. ?new starts a fresh one.
+    const last = readSavedRoom();
+    const fresh = () => api.createRoom().then((r) => { saveRoom(r.code); setRoom(r); });
+    if (last && !new URLSearchParams(location.search).has("new")) {
+      api.getRoom(last)
+        .then((st) => (st.chapter === "finale" ? fresh() : setRoom({ code: last, joinUrl: `${location.origin}/play/${last}` })))
+        .catch(() => fresh())
+        .catch((e) => setFlash(e.message));
+    } else {
+      fresh().catch((e) => setFlash(e.message));
+    }
   }, []);
 
   useEffect(() => {
@@ -152,11 +166,23 @@ export default function TvApp() {
       case "workshop":
         return { overlay: <Pieces state={s} intro onOk={() => pressOk(advance)} /> };
       case "drawer":
-        if (lockOpen) return { overlay: <ComboLock code={code} onError={fail} onClose={() => setLockOpen(false)} />, ownsRemote: true };
+        if (lockOpen) return { overlay: <><ToyTags found={found} /><ComboLock code={code} onError={fail} onClose={() => setLockOpen(false)} /></>, ownsRemote: true };
         return {
+          overlay: <ToyTags found={found} />,
           hand: <Hand bubble={bubble} mood={s.jingle.mood} help={HELP} hotspots={[SHELF.lock, ...SHELF.fun]} start={{ x: 960, y: 450 }} onPick={(h) => {
             if (!h) return missed();
             if (h.id === "lock") { sfx.tick(); setLockOpen(true); return; }
+            const toy = DRAWER_TOYS.find((t) => t.id === h.id);
+            if (toy) {
+              sfx.sparkle();
+              setPoke({ x: h.x, y: h.y, at: Date.now() });
+              const next = found.includes(toy.id) ? found : [...found, toy.id];
+              setFound(next);
+              jingleSays(next.length === DRAWER_TOYS.length
+                ? `A ${toy.digit} under ${toy.name}! That's all four. Now put them in the key's order and fly me to the lock!`
+                : `Look! There's a ${toy.digit} painted under ${toy.name}!`);
+              return;
+            }
             funPick(h as FunSpot);
           }} />,
         };
@@ -436,6 +462,19 @@ function PieceIcon({ id }: { id: string }) {
   return <svg viewBox="0 0 40 40" className="piece-icon"><path d="M20 3l5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z" fill="currentColor" /></svg>;
 }
 
+/** The numbers found under Grandpa's toys, hanging on little brass tags where each toy sits. */
+function ToyTags({ found }: { found: string[] }) {
+  return (
+    <>
+      {DRAWER_TOYS.filter((t) => found.includes(t.id)).map((t) => {
+        const spot = SHELF.fun.find((f) => f.id === t.id)!;
+        return <div key={t.id} className="toy-tag" style={{ left: spot.x, top: spot.y + spot.r * 0.55 }}>{t.digit}</div>;
+      })}
+      <div className="toy-count">{found.length ? `Numbers found: ${found.length} of ${DRAWER_TOYS.length}` : "Four toys hide a number"}</div>
+    </>
+  );
+}
+
 /** Jingle is frozen on the window ledge: pick a warm thing with the arrows and OK sends it to him.
  * The other way to warm him is the last item: buying him a knitted scarf in the Appstore. */
 function WarmTray({ state, onError }: { state: PublicState; onError: (e: unknown) => void }) {
@@ -626,4 +665,12 @@ function PhoneIcon() {
       <circle cx="12" cy="18" r="1.3" fill="currentColor" />
     </svg>
   );
+}
+
+const ROOM_KEY = "gw-tv-room";
+function readSavedRoom() {
+  try { return localStorage.getItem(ROOM_KEY); } catch { return null; }
+}
+function saveRoom(code: string) {
+  try { localStorage.setItem(ROOM_KEY, code); } catch { /* private mode: no resume, still playable */ }
 }

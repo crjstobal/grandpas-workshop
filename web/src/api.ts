@@ -22,6 +22,7 @@ const post = <T = { done: boolean }>(code: string, path: string, body: unknown =
 
 export const api = {
   createRoom: () => call<{ code: string; joinUrl: string }>("/api/rooms", { method: "POST" }),
+  getRoom: (code: string) => call<PublicState>(`/api/rooms/${code}`),
   join: (code: string, name: string, deviceId: string, grownUp: boolean) => post<Player>(code, "join", { name, deviceId, grownUp }),
   leave: (code: string, playerId: string, deviceId: string) => post<void>(code, "leave", { playerId, deviceId }),
   advance: (code: string) => post<{ chapter: string }>(code, "advance"),
@@ -32,7 +33,8 @@ export const api = {
   unlock: (code: string) => post(code, "unlock"),
   drawer: (code: string, combo: string) => post(code, "drawer", { code: combo }),
   globeGear: (code: string, playerId: string, x: number, y: number, hold: number) => post(code, "globe-gear", { playerId, x, y, hold }),
-  globeResult: (code: string, playerId: string, ok: boolean) => post(code, "globe-result", { playerId, ok }),
+  globeResult: (code: string, playerId: string, ok: boolean, n?: number) => post(code, "globe-result", { playerId, ok, n }),
+  skip: (code: string, playerId: string) => post<{ chapter: string }>(code, "skip", { playerId }),
   orchestra: (code: string, round: number) => post(code, "orchestra", { round }),
   record: (code: string) => post(code, "record"),
   recordDone: (code: string) => post(code, "record-done"),

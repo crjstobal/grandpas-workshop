@@ -643,6 +643,18 @@ export function BalanceGlobe({ state, code, player }: { state: PublicState; code
 
   const setP = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
+  // The result must reach the TV, or the story waits forever: retry through network drops, and
+  // offer a button if the TV still hasn't confirmed. The server ignores repeats of the same turn.
+  const [stuck, setStuck] = useState(false);
+  const sendResult = async (success: boolean) => {
+    const { code: c, player: p } = props.current;
+    for (let i = 0; i < 4; i++) {
+      try { await api.globeResult(c, p.id, success, turnN.current); return; }
+      catch { await new Promise((res) => setTimeout(res, 800 * (i + 1))); }
+    }
+    setStuck(true);
+  };
+
   // Canvas, art and the render and physics loop. Runs for the whole life of the component.
   useEffect(() => {
     const canvas = canvasRef.current!, stage = stageRef.current!;
@@ -707,8 +719,8 @@ export function BalanceGlobe({ state, code, player }: { state: PublicState; code
         sfx.boing();
         navigator.vibrate?.([80, 60, 80]);
       }
-      const { code: c, player: p } = props.current;
-      void api.globeResult(c, p.id, success).catch(() => {});
+      void sendResult(success);
+      timeouts.current.push(window.setTimeout(() => setStuck(true), 8000));
     };
 
     const step = (dt: number) => {
@@ -998,7 +1010,12 @@ export function BalanceGlobe({ state, code, player }: { state: PublicState; code
               : solo ? "Never mind. Take a breath and try again, nice and slow." : "Never mind. Pass the phone on, everyone gets a go."}
           </p>
           {confirmed && state.jingle.line && <p className="bg-jingle">"{state.jingle.line}"</p>}
-          {!confirmed && <p className="bg-wait">Telling the TV...</p>}
+          {!confirmed && !stuck && <p className="bg-wait">Telling the TV...</p>}
+          {!confirmed && stuck && (
+            <button className="big" onClick={() => { setStuck(false); void sendResult(!!ok); timeouts.current.push(window.setTimeout(() => setStuck(true), 8000)); }}>
+              The TV didn't hear it. Send again
+            </button>
+          )}
         </div>
       )}
     </div>

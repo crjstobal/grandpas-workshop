@@ -22,7 +22,7 @@ and he opens, carries and places things.
 | The letter | | Find and open the envelope on the door | Point and click, D-pad |
 | Wake up Jingle | Shake to wind Jingle's key | Jingle jiggles with every shake | DeviceMotion, live room state |
 | The locked door | Draw a key on paper, scan it | Carry your drawn key to the lock | Amazon Nova (vision) judges the drawing |
-| The drawer | Spin the 3D key, read the code on its back | Explore the toy shelf, dial the lock | three.js, D-pad |
+| The drawer | Spin the 3D key: its back shows four toys, in order | Fly Jingle under those toys to find their numbers, dial the lock | three.js, D-pad |
 | The snow globe | Shake the globe, wait for the snow to settle | The big globe swirls with every phone | three.js, canvas particles |
 | Something warm | Photograph anything warm or cosy at home | Hand the photo to Jingle | Amazon Nova (vision), attribute matching |
 | The toy orchestra | Help remember | Fly Jingle to the toys in the order they played (memory game) | Web Audio |

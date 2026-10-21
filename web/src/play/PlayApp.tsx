@@ -44,6 +44,8 @@ export default function PlayApp() {
   const grownUp = mine.find((p) => p.grownUp) ?? null;
 
   useEffect(() => { if (myTurn && turnPlayer) setActiveId(turnPlayer.id); }, [myTurn, turnPlayer?.id]);
+  // The grown-up can skip a puzzle; with no grown-up in the game, anyone can.
+  const skipper = grownUp ?? (state && !state.players.some((p) => p.grownUp) ? active : null);
 
   if (!state) return <div className="phone center"><p>{error ?? "Finding the workshop..."}</p></div>;
   if (!mine.length || adding) {
@@ -71,6 +73,9 @@ export default function PlayApp() {
           ? <OtherTurn state={state} player={turnPlayer} />
           : <Task state={state} me={active!} mine={mine} myTurn={myTurn} />}
       </main>
+      {skipper && !["lobby", "message", "workshop", "finale"].includes(state.chapter) && (
+        <SkipPuzzle key={state.chapter} code={code} playerId={skipper.id} />
+      )}
       {alexaOpen && (
         <div className="sheet" onClick={(e) => e.target === e.currentTarget && setAlexaOpen(false)}>
           <div className="sheet-card">
@@ -155,7 +160,7 @@ function Task({ state, me, mine, myTurn }: { state: PublicState; me: Player; min
     case "workshop":
       return <Wait title="The Star Machine" text="Three pieces are missing. Look at the TV, then press OK on the remote." />;
     case "drawer":
-      return <Viewer3D model="key" drawing={state.key?.imageUrl ?? null} caption="Something is engraved on the back of the key. Spin it around!" />;
+      return <Viewer3D model="key" drawing={state.key?.imageUrl ?? null} caption="Spin the key! Grandpa engraved four toys on the back. Find their numbers on the TV, in this order." />;
     case "globe":
       return state.turn && myTurn
         ? <>{banner}<BalanceGlobe key={state.turn.n} state={state} code={code} player={me} /></>
@@ -228,5 +233,27 @@ function Wait({ title, text }: { title: string; text: string }) {
       <p>{text}</p>
       <div className="tv-hint" aria-hidden><svg viewBox="0 0 48 36" width="72" height="54"><rect x="2" y="2" width="44" height="26" rx="4" fill="none" stroke="currentColor" strokeWidth="3" /><path d="M16 34h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg></div>
     </div>
+  );
+}
+
+/** For the grown-up: skip a puzzle that won't work out (two taps, so a kid can't do it by accident). */
+function SkipPuzzle({ code, playerId }: { code: string; playerId: string }) {
+  const [armed, setArmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  const tap = () => {
+    if (busy) return;
+    if (!armed) { setArmed(true); return; }
+    setBusy(true);
+    api.skip(code, playerId).catch(() => setBusy(false));
+  };
+  return (
+    <button className={`skip-puzzle ${armed ? "armed" : ""}`} onClick={tap} disabled={busy}>
+      {busy ? "Skipping..." : armed ? "Tap again to skip this puzzle" : "Grown-ups: skip this puzzle"}
+    </button>
   );
 }

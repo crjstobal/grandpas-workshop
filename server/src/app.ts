@@ -68,6 +68,12 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
   // The remote's OK button, in chapters that are pure story.
   app.post("/api/rooms/:code/advance", (c) => c.json({ chapter: rooms.mutate(c.req.param("code"), game.advance) }));
 
+  // A grown-up skips the current puzzle from their phone.
+  app.post("/api/rooms/:code/skip", async (c) => {
+    const { playerId } = await c.req.json<{ playerId?: string }>().catch(() => ({ playerId: "" }));
+    return c.json({ chapter: rooms.mutate(c.req.param("code"), (r) => game.skipPuzzle(r, String(playerId ?? ""))) });
+  });
+
   // Offline development only: jump to any chapter to check its screen.
   if (MOCK) app.post("/api/rooms/:code/dev/goto/:chapter", (c) =>
     c.json({ chapter: rooms.mutate(c.req.param("code"), (r) => game.devGoto(r, c.req.param("chapter") as never)) }));
@@ -99,7 +105,7 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
   step("unlock", (r) => game.unlockDoor(r), game.afterDoor, 5_000);
   step("drawer", (r, b) => game.tryDrawer(r, String(b.code ?? "")));
   step("globe-gear", (r, b) => { game.globeGear(r, String(b.playerId ?? ""), Number(b.x), Number(b.y), Number(b.hold)); });
-  step("globe-result", (r, b) => game.globeResult(r, String(b.playerId ?? ""), b.ok === true), game.afterGlobe, 7_000);
+  step("globe-result", (r, b) => game.globeResult(r, String(b.playerId ?? ""), b.ok === true, b.n === undefined ? undefined : Number(b.n)), game.afterGlobe, 7_000);
   step("orchestra", (r, b) => game.orchestraDone(r, Number(b.round)), game.afterOrchestra, 8_000);
   // The record carries Grandpa's voice: the TV says when his message is over, with a fallback.
   step("record", (r) => game.playRecord(r), game.startDance, 40_000);

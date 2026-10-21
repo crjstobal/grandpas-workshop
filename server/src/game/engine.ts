@@ -200,6 +200,29 @@ export function skipTurn(r: Room) {
   nextTurn(r);
 }
 
+// ---- skipping a puzzle ----
+
+const NOTHING_TO_SKIP: ChapterId[] = ["lobby", "message", "workshop", "finale"];
+
+/** A grown-up skips the current puzzle (a sensor that won't cooperate, a tired family): the story
+ * moves on as if it had been solved, with any Star Machine piece it gives. */
+export function skipPuzzle(r: Room, playerId: string) {
+  const p = player(r, playerId);
+  if (r.players.some((x) => x.grownUp) && !p.grownUp) throw new GameError("Ask a grown-up to skip this one.", 403);
+  const ch = r.chapter;
+  if (NOTHING_TO_SKIP.includes(ch)) throw new GameError("There is no puzzle to skip right now.");
+  if (ch === "door_key") r.doorOpen = true;
+  if (ch === "drawer") r.drawerOpen = true;
+  if (ch === "globe") r.pieces.gear = true;
+  if (ch === "record") { r.pieces.song = true; r.recordPlaying = false; }
+  if (ch === "memory") { r.pieces.star = true; r.quiz.done = true; }
+  if (ch === "flight") r.flight.done = true;
+  const next = nextChapter(ch);
+  if (next) enter(r, next);
+  if (next === "finale") r.finale = "arrival";
+  return r.chapter;
+}
+
 // ---- the remote ----
 
 /** The remote's OK: moves the story forward where the chapter allows it. */
@@ -342,7 +365,7 @@ export function tryDrawer(r: Room, code: string) {
   }
   r.drawerTries++;
   say(r, r.drawerTries >= 3
-    ? "Not that one. Psst: spin the key you drew on the phone. Grandpa engraves everything!"
+    ? "Not that one. Psst: the back of your key shows four toys. Read their numbers in that order!"
     : "Click, clack... nope. Try another number!", "awake");
   return false;
 }
@@ -354,9 +377,11 @@ export function globeGear(r: Room, playerId: string, x: number, y: number, hold:
   r.globe.gear = { x: c(x), y: c(y), hold: Math.max(0, Math.min(1, Number(hold) || 0)), at: Date.now() };
 }
 
-/** One player's attempt is over. Returns true when the gear is out. */
-export function globeResult(r: Room, playerId: string, ok: boolean) {
-  if (r.chapter !== "globe") throw new GameError("The snow globe is not out right now.");
+/** One player's attempt is over. Returns true when the gear is out. n is the turn the attempt was
+ * made in: the phone retries when the network drops, and a repeat of a counted attempt is ignored. */
+export function globeResult(r: Room, playerId: string, ok: boolean, n?: number) {
+  if (r.chapter !== "globe") return false; // a late retry after the story moved on
+  if (n !== undefined && r.turn?.n !== n) return false;
   requireTurn(r, playerId);
   const name = nameOf(r, playerId);
   r.globe.last = { playerId, ok, at: Date.now() };
@@ -503,7 +528,7 @@ function buildQuiz(r: Room): QuizQuestion[] {
   const names = r.players.map((p) => p.name);
   const warm = r.warmFinds[0];
   if (warm) qs.push(mc(`What did ${nameOf(r, warm.playerId)} bring to warm Jingle up?`, warm.label, DECOY_WARM));
-  qs.push(mc("What number was engraved on the back of your key?", "24 12", ["12 24", "25 12", "31 12"]));
+  qs.push(mc("Which toy was hiding the number 4?", "The drum", ["The train", "The elephant"]));
   if (names.length >= 2 && r.key) {
     qs.push(mc("Who drew the key that opened Grandpa's door?", nameOf(r, r.key.playerId), names.filter((n) => n !== nameOf(r, r.key!.playerId)).concat(["Jingle"])));
   } else if (r.key) {

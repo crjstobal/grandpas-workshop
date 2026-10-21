@@ -1,12 +1,56 @@
-// A 3D object on the phone made from the player's own drawing: the family's key (with the drawer
-// code engraved on the back) or their Christmas ornament. Drag to turn it.
+// A 3D object on the phone made from the player's own drawing: the family's key (with four of
+// Grandpa's toys engraved on the back, the order of the drawer code) or their Christmas ornament.
+// Drag to turn it.
 import { useEffect, useRef, type ReactNode } from "react";
 import * as THREE from "three";
-import { DRAWER_CODE } from "../../../shared/story";
+import { DRAWER_TOYS } from "../../../shared/story";
 import { applyDrawing, drawingTexture, frame, loadGlb, makeStage, textTexture } from "./three-kit";
 
 const brass = () => new THREE.MeshStandardMaterial({ color: 0xc8963e, metalness: 1, roughness: 0.32 });
-const engraved = `${DRAWER_CODE.slice(0, 2)} ${DRAWER_CODE.slice(2)}`;
+
+/** The back of the key: the four toys of the drawer code, numbered in order, on brass. */
+function toyPlateTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 512;
+  const g = c.getContext("2d")!;
+  const grad = g.createRadialGradient(220, 200, 40, 256, 256, 300);
+  grad.addColorStop(0, "#e2b765");
+  grad.addColorStop(1, "#9c6e2a");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  g.textAlign = "center";
+  g.textBaseline = "middle";
+  DRAWER_TOYS.forEach((t, i) => {
+    const x = i % 2 ? 358 : 154, y = i < 2 ? 160 : 360;
+    g.font = "150px 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Emoji', sans-serif";
+    g.fillText(t.icon, x, y + 10);
+    g.fillStyle = "#4a2f0e";
+    g.beginPath(); g.arc(x - 78, y - 74, 34, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#f6e2b0";
+    g.font = "800 46px Fraunces, Georgia, serif";
+    g.fillText(String(i + 1), x - 78, y - 71);
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Swaps the embossed engraving of key.glb for the toy plate, on the same face of the medallion. */
+function engraveToys(obj: THREE.Object3D) {
+  const old = obj.getObjectByName("Engraving");
+  const plate = obj.getObjectByName("backplate") as THREE.Mesh | undefined;
+  if (!plate) return;
+  if (old) old.visible = false;
+  plate.geometry.computeBoundingBox();
+  const box = plate.geometry.boundingBox!;
+  const size = box.getSize(new THREE.Vector3()), centre = box.getCenter(new THREE.Vector3());
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(Math.max(size.x, size.y) / 2 * 1.04, 64),
+    new THREE.MeshStandardMaterial({ map: toyPlateTexture(), metalness: 0.35, roughness: 0.5 }));
+  // in key.glb the medallion's back faces -Z: turn the disc round so it reads upright from behind
+  disc.rotation.set(0, Math.PI, 0);
+  disc.position.set(centre.x, centre.y, box.min.z - 0.0008);
+  plate.add(disc);
+}
 
 export function Viewer3D({ model, drawing, caption, extra }: { model: "key" | "ornament"; drawing: string | null; caption: string; extra?: ReactNode }) {
   const host = useRef<HTMLDivElement>(null);
@@ -20,6 +64,7 @@ export function Viewer3D({ model, drawing, caption, extra }: { model: "key" | "o
         const tex = await drawingTexture(drawing).catch((e) => { console.warn("[gw] drawing texture failed", e); return null; });
         if (tex && alive) console.info("[gw] drawing applied to", applyDrawing(obj, tex), "meshes");
       }
+      if (model === "key") engraveToys(obj);
       frame(obj, model === "key" ? 1.9 : 1.3);
       stage.scene.add(obj);
       if (model === "ornament") stage.onTick((dt) => { obj.rotation.z = Math.sin(performance.now() / 900) * 0.06; void dt; });
@@ -47,7 +92,7 @@ function fallbackKey() {
   // CircleGeometry UVs are flipped relative to glTF; match the glTF convention used by drawingTexture.
   flipV(face.geometry);
   const back = new THREE.Mesh(new THREE.CircleGeometry(0.42, 64), new THREE.MeshStandardMaterial({
-    map: textTexture(engraved, { bg: "#b78634", fg: "#5a3a12", font: "800 170px Fraunces, Georgia, serif" }), metalness: 0.8, roughness: 0.4,
+    map: toyPlateTexture(), metalness: 0.35, roughness: 0.5,
   }));
   back.position.z = -0.041;
   back.rotation.y = Math.PI;
