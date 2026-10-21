@@ -1,6 +1,7 @@
-// Grandpa's music box, synthesized with the Web Audio API: no audio files to license.
-// "Deck the Halls" (traditional, public domain). Everything goes through one master gain, so the
-// music can duck under voices and stop exactly when statues need silence.
+// Grandpa's music box, synthesized with the Web Audio API: "Deck the Halls" (traditional, public
+// domain). And the background music: a loop composed once with Eleven Music (web/public/music,
+// server/scripts/render-music.ts), crossfaded into itself so it never seams. Everything goes through
+// one master gain, so the music can duck under voices and stop exactly when statues need silence.
 
 const DECK = [
   // [semitones from C5, beats]
@@ -45,6 +46,88 @@ function note(at: number, semis: number, dur: number) {
     o.onended = () => { playing = playing.filter((x) => x !== o); };
   }
 }
+
+// ---- background loop ----
+
+const BED_URL = "/music/workshop.mp3";
+const BED_LEVEL = 0.3;
+const XFADE = 4; // seconds of overlap between one pass and the next
+const SKIP = 0.5; // the file opens with half a second of near-silence
+let bedBuf: Promise<AudioBuffer | null> | null = null;
+let bedGain: GainNode | null = null;
+let bedOn = false;
+let bedTimer: ReturnType<typeof setTimeout> | null = null;
+let bedSources: AudioBufferSourceNode[] = [];
+let unlockArmed = false;
+
+function loadBed() {
+  bedBuf ??= (async () => {
+    try {
+      const { c } = out();
+      const res = await fetch(BED_URL);
+      if (!res.ok) return null;
+      return await c.decodeAudioData(await res.arrayBuffer());
+    } catch { return null; }
+  })();
+  return bedBuf;
+}
+
+/** One pass of the loop starting at time `at`, fading in; schedules the next pass before it ends. */
+function bedPass(buf: AudioBuffer, at: number) {
+  if (!bedOn || !bedGain || !ctx) return;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const g = ctx.createGain();
+  const len = buf.duration - SKIP;
+  g.gain.setValueAtTime(0, at);
+  g.gain.linearRampToValueAtTime(1, at + XFADE);
+  g.gain.setValueAtTime(1, at + len - XFADE);
+  g.gain.linearRampToValueAtTime(0, at + len);
+  src.connect(g).connect(bedGain);
+  src.start(at, SKIP);
+  src.stop(at + len + 0.05);
+  bedSources.push(src);
+  src.onended = () => { bedSources = bedSources.filter((x) => x !== src); };
+  const next = at + len - XFADE;
+  bedTimer = setTimeout(() => bedPass(buf, next), Math.max(0, (next - ctx.currentTime - 1) * 1000));
+}
+
+export const backgroundMusic = {
+  /** Fades the loop in (or keeps it playing). */
+  async start() {
+    if (bedOn) return;
+    bedOn = true;
+    // Browsers keep audio suspended until the first key or tap: resume it then.
+    if (!unlockArmed) {
+      unlockArmed = true;
+      const unlock = () => { if (ctx?.state === "suspended") void ctx.resume(); };
+      window.addEventListener("keydown", unlock);
+      window.addEventListener("pointerdown", unlock);
+    }
+    try {
+      const { c, m } = out();
+      if (!bedGain) { bedGain = c.createGain(); bedGain.connect(m); }
+      bedGain.gain.cancelScheduledValues(c.currentTime);
+      bedGain.gain.setValueAtTime(bedGain.gain.value, c.currentTime);
+      bedGain.gain.linearRampToValueAtTime(BED_LEVEL, c.currentTime + 2);
+      if (bedSources.length) return; // still fading out from a stop: just bring it back up
+      const buf = await loadBed();
+      if (buf && bedOn && !bedSources.length) bedPass(buf, c.currentTime + 0.05);
+    } catch { /* no audio on this device */ }
+  },
+  /** Fades the loop out (chapters with their own music). */
+  stop() {
+    bedOn = false;
+    if (bedTimer) { clearTimeout(bedTimer); bedTimer = null; }
+    if (!bedGain || !ctx) return;
+    const t = ctx.currentTime;
+    bedGain.gain.cancelScheduledValues(t);
+    bedGain.gain.setValueAtTime(bedGain.gain.value, t);
+    bedGain.gain.linearRampToValueAtTime(0, t + 1.5);
+    const dying = bedSources;
+    setTimeout(() => { if (!bedOn) { for (const s of dying) { try { s.stop(); } catch { /* ended */ } } bedSources = bedSources.filter((x) => !dying.includes(x)); } }, 1600);
+  },
+};
 
 export const musicBox = {
   /** record: Grandpa's song twice. finale: three times, the last an octave up. dance: loops until stop(). */

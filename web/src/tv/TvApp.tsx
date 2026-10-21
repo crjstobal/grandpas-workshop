@@ -9,7 +9,7 @@ import { ALEXA_LINES, CHAPTER_COUNT, CHAPTERS, GRANDPA, chapterNumber, chapterOf
 import type { Find, PublicState } from "../../../shared/types";
 import { api, useRoom } from "../api";
 import { speak, stop, togglePause } from "../voice";
-import { musicBox } from "../music";
+import { backgroundMusic, musicBox } from "../music";
 import { sfx } from "../sfx";
 import { Jingle } from "./Jingle";
 import { Scene } from "./Scene";
@@ -82,6 +82,14 @@ export default function TvApp() {
   }, [room]);
 
   useEffect(() => { setCarry(null); setLockOpen(false); }, [state?.chapter]);
+  // Background music everywhere except the chapters that have their own (the toys' melodies to
+  // remember, Grandpa's record and the dance, the finale's music box).
+  useEffect(() => {
+    if (!state) return;
+    if (["orchestra", "record", "finale"].includes(state.chapter)) backgroundMusic.stop();
+    else void backgroundMusic.start();
+  }, [state?.chapter]);
+  useEffect(() => () => backgroundMusic.stop(), []);
   const story = useStory(state);
   useShakeFeedback(state);
 

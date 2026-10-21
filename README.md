@@ -31,8 +31,9 @@ and he opens, carries and places things.
 | Starlight | Shake to make starlight fall | Fly Jingle through the sparkles to fill the star | Live room state |
 | Finale | Save the letter as a card | The tree lights up, Grandpa's letter is read aloud | Amazon Nova, Amazon Polly |
 
-All sound effects and music are synthesized in the browser (Web Audio), so there are no audio
-files to license.
+Sound effects and Grandpa's music box are synthesized in the browser (Web Audio). The background
+music is one loop composed with Eleven Music (cleared for commercial use) by
+`npm run music -w server`, crossfaded into itself on the TV.
 
 The full script is in [docs/STORY.md](docs/STORY.md).
 
@@ -117,4 +118,4 @@ Live build: https://54.217.90.126.sslip.io/tv (the Fire TV app in `tv-app/` poin
 ## License
 
 MIT, see [LICENSE](LICENSE). Music: "Deck the Halls" (traditional, public domain),
-synthesized in the browser.
+synthesized in the browser; background loop generated with Eleven Music.
