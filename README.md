@@ -93,6 +93,20 @@ vega virtual-device start          # see FRICTION.md if this fails on Apple Sili
 vega run-app build/aarch64-debug/grandpasworkshop_aarch64.vpkg com.grandpasworkshop.tv.main -d VirtualDevice
 ```
 
+## Deploy on AWS
+
+`infra/core.yaml` is a CloudFormation stack, launched once by an admin: one Graviton instance
+(t4g.nano) running the game server, Caddy in front for HTTPS on a fixed address, and a
+least-privilege role (Nova on Bedrock, Polly, one SSM parameter for the voice key, the releases
+bucket). No SSH: `infra/deploy.sh` builds the web app, uploads a release to S3 and installs it
+through SSM Run Command.
+
+```bash
+AWS_PROFILE=your-profile infra/deploy.sh
+```
+
+Live build: https://54.217.90.126.sslip.io/tv (the Fire TV app in `tv-app/` points here).
+
 ## AWS services used
 
 - **Amazon Bedrock (Amazon Nova 2 Lite):** looks at every photo (drawings and objects) and
