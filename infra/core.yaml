@@ -9,7 +9,7 @@ Description: >
 Parameters:
   InstanceType:
     Type: String
-    Default: t4g.micro
+    Default: t4g.nano
   Ami:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
@@ -114,7 +114,7 @@ Resources:
           #!/bin/bash
           set -euxo pipefail
           HOST="${Address}.sslip.io"
-          # 1 GB of swap: npm install on a 1 GB instance needs the headroom
+          # 1 GB of swap: npm install on a 0.5 GB instance needs the headroom
           fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
           echo '/swapfile none swap sw 0 0' >> /etc/fstab
           # Node 22 (same major as development) and Caddy, pinned
