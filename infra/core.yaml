@@ -1,0 +1,203 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Grandpa's Workshop server: one small Graviton instance running the game server (rooms live in
+  memory, live updates use Server-Sent Events), Caddy in front for HTTPS on a fixed address, and the
+  least-privilege role it needs for Amazon Bedrock (Nova), Amazon Polly and the ElevenLabs key in SSM.
+  Launch once with an admin user (it creates IAM resources). Code updates go through infra/deploy.sh,
+  which needs no IAM permissions.
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t4g.micro
+  Ami:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+  Model:
+    Type: String
+    Default: eu.amazon.nova-2-lite-v1:0
+  VoiceKeyParameter:
+    Type: String
+    Default: /servikaki/secrets/elevenlabs.env
+
+Resources:
+  Releases:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub grandpas-workshop-releases-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules: [{ Id: old-releases, Status: Enabled, NoncurrentVersionExpiration: { NoncurrentDays: 7 } }]
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: grandpas-workshop-server
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # deploy.sh updates the server through SSM Run Command (no SSH, no open port 22)
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: grandpas-workshop-least-privilege
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: Nova
+                Effect: Allow
+                Action: [bedrock:InvokeModel, bedrock:Converse]
+                Resource:
+                  - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${Model}
+                  - arn:aws:bedrock:*::foundation-model/amazon.nova-*
+              - Sid: Voice
+                Effect: Allow
+                Action: polly:SynthesizeSpeech
+                Resource: "*"
+              - Sid: VoiceKey
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${VoiceKeyParameter}
+              - Sid: DecryptVoiceKeyViaSsm
+                Effect: Allow
+                Action: kms:Decrypt
+                Resource: "*"
+                Condition:
+                  StringEquals: { kms:ViaService: !Sub "ssm.${AWS::Region}.amazonaws.com" }
+              - Sid: Releases
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub ${Releases.Arn}/*
+
+  Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: grandpas-workshop-server
+      Roles: [!Ref Role]
+
+  Web:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: grandpas-workshop-web
+      GroupDescription: HTTP (certificate challenge, redirect) and HTTPS only
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0 }
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0 }
+
+  Address:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags: [{ Key: Name, Value: grandpas-workshop }]
+
+  Server:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref Ami
+      IamInstanceProfile: !Ref Profile
+      SecurityGroupIds: [!GetAtt Web.GroupId]
+      MetadataOptions: { HttpTokens: required }
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs: { VolumeSize: 12, VolumeType: gp3, Encrypted: true }
+      Tags: [{ Key: Name, Value: grandpas-workshop }]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          HOST="${Address}.sslip.io"
+          # 1 GB of swap: npm install on a 1 GB instance needs the headroom
+          fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+          echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          # Node 22 (same major as development) and Caddy, pinned
+          curl -fsSL https://nodejs.org/dist/v22.20.0/node-v22.20.0-linux-arm64.tar.xz | tar -xJ -C /opt
+          ln -sfn /opt/node-v22.20.0-linux-arm64 /opt/node
+          curl -fsSL https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_arm64.tar.gz | tar -xz -C /usr/local/bin caddy
+          useradd --system --create-home --home-dir /opt/gw gw || true
+          mkdir -p /etc/caddy /opt/gw/app
+          cat > /etc/caddy/Caddyfile <<CADDY
+          $HOST {
+            encode gzip
+            reverse_proxy 127.0.0.1:8788 {
+              flush_interval -1
+            }
+          }
+          CADDY
+          cat > /etc/systemd/system/caddy.service <<'UNIT'
+          [Unit]
+          Description=Caddy (HTTPS for Grandpa's Workshop)
+          After=network-online.target
+          Wants=network-online.target
+          [Service]
+          ExecStart=/usr/local/bin/caddy run --config /etc/caddy/Caddyfile
+          Environment=HOME=/root
+          Restart=always
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          cat > /etc/systemd/system/gw.service <<UNIT
+          [Unit]
+          Description=Grandpa's Workshop game server
+          After=network-online.target
+          [Service]
+          User=gw
+          WorkingDirectory=/opt/gw/app
+          Environment=PATH=/opt/node/bin:/usr/bin:/bin
+          Environment=NODE_ENV=production
+          Environment=PORT=8788
+          Environment=GW_PUBLIC_URL=https://$HOST
+          Environment=GW_BEDROCK_REGION=${AWS::Region}
+          Environment=GW_MODEL=${Model}
+          Environment=GW_SECRETS_PROFILE=none
+          Environment=GW_SECRETS_REGION=${AWS::Region}
+          Environment=GW_SECRETS_PARAM=${VoiceKeyParameter}
+          ExecStart=/opt/node/bin/node --import tsx server/src/node.ts
+          Restart=always
+          RestartSec=3
+          [Install]
+          WantedBy=multi-user.target
+          UNIT
+          # deploy.sh runs this through SSM: fetch the release, install, swap, restart
+          cat > /opt/gw/update.sh <<'UPDATE'
+          #!/bin/bash
+          set -euo pipefail
+          export PATH=/opt/node/bin:$PATH
+          rm -rf /opt/gw/next && mkdir -p /opt/gw/next
+          aws s3 cp "s3://${Releases}/release.tgz" /tmp/release.tgz --region ${AWS::Region}
+          tar -xzf /tmp/release.tgz -C /opt/gw/next
+          cd /opt/gw/next && npm ci --omit=dev -w server --no-audit --no-fund --loglevel=error
+          mkdir -p /opt/gw/next/.data
+          [ -d /opt/gw/app/.data/voice ] && cp -r /opt/gw/app/.data/voice /opt/gw/next/.data/ || true
+          chown -R gw:gw /opt/gw/next
+          rm -rf /opt/gw/prev && { [ -d /opt/gw/app ] && mv /opt/gw/app /opt/gw/prev || true; } && mv /opt/gw/next /opt/gw/app
+          systemctl restart gw
+          echo "Deployed $(cat /opt/gw/app/RELEASE 2>/dev/null)"
+          UPDATE
+          chmod +x /opt/gw/update.sh
+          chown -R gw:gw /opt/gw
+          systemctl daemon-reload
+          systemctl enable --now caddy
+          systemctl enable gw
+          /opt/gw/update.sh || echo "No release yet: run infra/deploy.sh"
+
+  Attach:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt Address.AllocationId
+      InstanceId: !Ref Server
+
+Outputs:
+  Url:
+    Value: !Sub https://${Address}.sslip.io
+  InstanceId:
+    Value: !Ref Server
+  Bucket:
+    Value: !Ref Releases

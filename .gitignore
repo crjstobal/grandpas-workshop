@@ -14,3 +14,4 @@ art/renders/
 .vega-*.log
 art/blender/tex/*.exr
 __pycache__/
+infra/.build/

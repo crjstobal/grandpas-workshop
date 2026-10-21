@@ -52,7 +52,8 @@ export function elevenKey() {
     try {
       const ssm = new SSMClient({
         region: process.env.GW_SECRETS_REGION ?? "eu-west-1",
-        credentials: fromIni({ profile: process.env.GW_SECRETS_PROFILE ?? "servikaki-secrets" }),
+        // On the server (EC2) the instance role reads it: GW_SECRETS_PROFILE=none uses the default chain.
+        credentials: process.env.GW_SECRETS_PROFILE === "none" ? undefined : fromIni({ profile: process.env.GW_SECRETS_PROFILE ?? "servikaki-secrets" }),
       });
       const out = await ssm.send(new GetParameterCommand({ Name: process.env.GW_SECRETS_PARAM ?? "/servikaki/secrets/elevenlabs.env", WithDecryption: true }));
       const line = (out.Parameter?.Value ?? "").split("\n").find((l) => l.trim().startsWith("ELEVENLABS_API_KEY="));
