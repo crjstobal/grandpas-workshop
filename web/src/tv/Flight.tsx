@@ -13,6 +13,7 @@ import { api } from "../api";
 import { playNote, sfx } from "../sfx";
 import "./Flight.css";
 import { flySprite } from "./look";
+import { whenQuiet } from "../voice";
 
 // ---------------- tuning ----------------
 const W = 1920;
@@ -1418,6 +1419,10 @@ export function Flight({ state, bubble }: { state: PublicState; bubble: { line: 
   const [phase, setPhase] = useState<Phase>(state.flight.done ? "landed" : "tutorial");
   const [toast, setToast] = useState<{ name: string; color: string; at: number } | null>(null);
   const [bubbleOn, setBubbleOn] = useState(false);
+  // The "how to fly" card waits until the narrator and Jingle have finished, so it never sits on
+  // top of the subtitles.
+  const [ready, setReady] = useState(false);
+  useEffect(() => { let on = true; void whenQuiet(500).then(() => on && setReady(true)); return () => { on = false; }; }, []);
 
   useEffect(() => {
     const e = createFlight(canvasRef.current!, {
@@ -1490,7 +1495,7 @@ export function Flight({ state, bubble }: { state: PublicState; bubble: { line: 
         <div className={`fl-roof ${phase === "landed" ? "lit" : ""}`}><RoofIcon /></div>
       </div>
 
-      {phase === "tutorial" && (
+      {phase === "tutorial" && ready && (
         <div className="fl-tutorial">
           <RemoteIcon />
           <div>

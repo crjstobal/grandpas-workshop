@@ -345,7 +345,8 @@ function useStory(state: PublicState | null) {
         void speak("alexa", ALEXA_LINES.newMessage, { kind: "story" })
           .then(() => speak("grandpa", GRANDPA.stuck))
           .then(() => setBusy(false));
-      } else if (ch.narration) {
+      } else if (ch.narration && state.chapter !== "finale") {
+        // (the finale reads its narration itself, as the first beat of Grandpa coming home)
         void speak("narrator", ch.narration);
       }
       if (state.jingle.intro && state.jingle.line) {
