@@ -161,7 +161,7 @@ export default function TvApp() {
       case "warm_jingle":
         return { overlay: <WarmTray state={s} onError={fail} />, ownsRemote: true };
       case "door_key":
-        if (!s.key) return { overlay: <Waiting title="A key that believes in itself" text="Draw a key on paper and scan it with a phone." /> };
+        if (!s.key) return null; // the phone task at the bottom says what to do
         if (s.doorOpen) return { overlay: <div className="door-glow" /> };
         return {
           hand: <Hand bubble={bubble} mood={s.jingle.mood} help="Carry the key to the lock · OK" hotspots={[DOOR.keyhole, DOOR.envelope, ...DOOR.fun]} start={{ x: 640, y: 760 }}
@@ -271,7 +271,7 @@ export default function TvApp() {
           </div>
         )}
 
-        {state && state.chapter !== "lobby" && <Players state={state} qr={qr} />}
+        {state && state.chapter !== "lobby" && <Players state={state} />}
 
         {state?.chapter === "lobby" && <Lobby state={state} qr={qr} onOk={() => pressOk(advance)} />}
         {play?.overlay}
@@ -292,6 +292,7 @@ export default function TvApp() {
         {paused && <div className="paused-badge">Paused · press play to continue</div>}
         {leaving && (
           <div className="leave-confirm">
+            {qr && <div className="leave-join"><img src={qr} alt="Scan to join" /><span>Someone new? Scan to join</span></div>}
             <h2>Leave Grandpa's Workshop?</h2>
             <p>Press <strong>OK</strong> to keep playing, or <strong>Back</strong> again to leave.</p>
             <p className="leave-new">Press <strong>Down</strong> to start a new game.</p>
@@ -437,10 +438,10 @@ function Lobby({ state, qr, onOk }: { state: PublicState; qr: string; onOk: () =
   );
 }
 
-function Players({ state, qr }: { state: PublicState; qr: string }) {
+/** Who is playing, in the corner. The QR code stays in the lobby (and in the Back menu, for late joiners). */
+function Players({ state }: { state: PublicState }) {
   return (
     <div className="players">
-      {qr && <img src={qr} alt="" className="mini-qr" />}
       <div>
         <span className="code">{state.code}</span>
         <ul>{state.players.map((p) => <li key={p.id} className={state.turn?.playerId === p.id ? "turn" : ""}><span className="dot" style={{ background: p.color }} />{p.name}</li>)}</ul>
@@ -578,15 +579,6 @@ function Arrival() {
   return (
     <div className="arrival" aria-hidden>
       <div className="beacon-rays" />
-    </div>
-  );
-}
-
-function Waiting({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="waiting-card">
-      <h2>{title}</h2>
-      <p><PhoneIcon /> {text}</p>
     </div>
   );
 }

@@ -31,6 +31,13 @@ export function Jingle({ mood, line, at, chapter, shake }: { mood: JingleMood; l
   const sprite = garden ? perched.body : flySprite(frame);
   const [hasSprite, setHasSprite] = useState(true);
   const [bounce, setBounce] = useState(false);
+  // His words stay 8 seconds, then the scene is clear again.
+  const [saying, setSaying] = useState(true);
+  useEffect(() => {
+    setSaying(true);
+    const t = setTimeout(() => setSaying(false), 8000);
+    return () => clearTimeout(t);
+  }, [at]);
   const [jiggle, setJiggle] = useState(false);
   useEffect(() => {
     setBounce(true);
@@ -51,7 +58,7 @@ export function Jingle({ mood, line, at, chapter, shake }: { mood: JingleMood; l
       {hasSprite
         ? <img className="body" src={sprite} alt="Jingle" onError={() => setHasSprite(false)} />
         : <JingleDrawing mood={mood} />}
-      {line && mood !== "sleep" && <div className={`bubble ${spot.x > 1300 ? "left" : "right"}`} key={at}>{line}</div>}
+      {line && saying && mood !== "sleep" && <div className={`bubble ${spot.x > 1300 ? "left" : "right"}`} key={at}>{line}</div>}
       {mood === "sleep" && <div className="zzz">z z z</div>}
       {jiggle && <div className="sparks" key={`s${shake}`}><i /><i /><i /><i /><i /></div>}
     </div>
