@@ -123,6 +123,8 @@ export default function TvApp() {
         return;
       }
       if (leaving && (e.key === "Enter" || e.keyCode === 23)) { e.preventDefault(); e.stopImmediatePropagation(); setLeaving(false); return; }
+      // Down, from the leave dialog: a fresh game (the TV otherwise resumes the last one)
+      if (leaving && e.key === "ArrowDown") { e.preventDefault(); e.stopImmediatePropagation(); location.replace(`${location.pathname}?new`); return; }
       if (e.key === "MediaPlayPause") { e.preventDefault(); setPaused(togglePause()); }
       if ((e.key === "ContextMenu" || e.key === "m") && state && state.chapter !== "lobby") {
         e.preventDefault();
@@ -292,6 +294,7 @@ export default function TvApp() {
           <div className="leave-confirm">
             <h2>Leave Grandpa's Workshop?</h2>
             <p>Press <strong>OK</strong> to keep playing, or <strong>Back</strong> again to leave.</p>
+            <p className="leave-new">Press <strong>Down</strong> to start a new game.</p>
           </div>
         )}
         {flash && <div className="flash">{flash}</div>}

@@ -426,3 +426,5 @@ button { font: inherit; cursor: pointer; }
 /* the garden: the right third is free for the UI */
 .stage .wind { left: 1615px; bottom: 300px; width: 520px; }
 .stage:has(.orchestra-meter) .narration.top { bottom: 200px; }
+
+.leave-new { opacity: 0.75; font-size: 0.85em; }
