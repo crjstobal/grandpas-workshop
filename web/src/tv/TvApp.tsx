@@ -69,7 +69,8 @@ export default function TvApp() {
     const fresh = () => api.createRoom().then((r) => { saveRoom(r.code); setRoom(r); });
     if (last && !new URLSearchParams(location.search).has("new")) {
       api.getRoom(last)
-        .then((st) => (st.chapter === "finale" ? fresh() : setRoom({ code: last, joinUrl: `${location.origin}/play/${last}` })))
+        // a finished game left a while ago: start a new one (a quick relaunch still resumes it)
+        .then((st) => (st.chapter === "finale" && Date.now() - st.updatedAt > 20 * 60_000 ? fresh() : setRoom({ code: last, joinUrl: `${location.origin}/play/${last}` })))
         .catch(() => fresh())
         .catch((e) => setFlash(e.message));
     } else {

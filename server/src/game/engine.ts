@@ -91,7 +91,7 @@ export function createRoom(code: string): Room {
 
 export function publicState(r: Room): PublicState {
   return {
-    code: r.code, chapter: r.chapter, players: r.players, jingle: r.jingle, turn: r.turn,
+    code: r.code, updatedAt: r.updatedAt, chapter: r.chapter, players: r.players, jingle: r.jingle, turn: r.turn,
     wind: Math.round(r.wind), lastShake: r.lastShake,
     key: r.key, doorOpen: r.doorOpen, drawerOpen: r.drawerOpen,
     warmFinds: r.warmFinds, warmNeeded: warmNeeded(r), pieces: r.pieces,

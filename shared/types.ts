@@ -145,6 +145,8 @@ export interface Checkout {
 
 /** What everyone in the room sees. Sent to the TV and the phones over SSE after every change. */
 export interface PublicState {
+  /** Last change (ms epoch): a TV reopening long after a finished game starts a new one. */
+  updatedAt: number;
   code: string;
   chapter: ChapterId;
   players: Player[];
