@@ -105,7 +105,7 @@ function mockTalk(code: string, message: string): AlexaReply {
       try {
         const res = game.answerQuiz(r, message);
         const next = game.currentQuestion(r);
-        if (res.done) return { text: "That's right! That was the last one. Grandpa's box is open!" };
+        if (res.done) { rooms.later(code, 7_000, game.afterMemory); return { text: "That's right! That was the last one. Grandpa's box is open!" }; }
         if (!res.right) return { text: `Hmm, not quite. Here it is again: ${q.question} ${q.options.join(", or ")}?`, card: { type: "question", title: `Question ${q.number} of ${q.of}`, question: q.question, options: q.options } };
         return { text: `That's right! Next one. ${next!.question} ${next!.options.join(", or ")}?`, card: { type: "question", title: `Question ${next!.number} of ${next!.of}`, question: next!.question, options: next!.options } };
       } catch {

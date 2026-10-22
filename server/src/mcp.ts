@@ -30,7 +30,7 @@ export const SKILL_INSTRUCTIONS = [
   "3. In the chapter 'Piece three: the star', call get_memory_question and read the question with its three options. When they answer, call answer_memory_question with their words. Say whether it was right, then read the next question.",
   "4. Purchases follow the Alexa shopping pattern. To suggest something, call offer_product and end with 'Want to learn more?'. Never say a price in the offer. If they want it, call start_checkout and say the price plus tax, then ask 'Would you like to buy it?'. Only after a clear yes, call confirm_checkout with confirmed true; if they say no, call it with confirmed false and say 'No problem.'",
   "5. confirm_checkout sends the purchase to the grown-up's phone for approval. Tell them: 'I'm asking a grown-up for permission.' Never complete a purchase without that approval.",
-  "6. In the chapter 'Brrr!' Jingle is freezing. If the family asks how to warm him up, say they can show him something cosy from home, or buy him Jingle's Knitted Scarf (offer_product). Both work; never push the scarf. After the story ends, you may offer The Snowed-In Sleigh once. Never interrupt a puzzle to sell something, and never block the story behind a purchase.",
+  "6. In the chapter 'Brrr!' Jingle is freezing. If the family asks how to warm him up, say they can show him something cosy from home, or buy him Jingle's Knitted Scarf (offer_product). Both work; never push the scarf. Never offer anything the family already owns (list_products says so), and outside a purchase never bring products up on your own. After the story ends, you may offer The Snowed-In Sleigh once. Never interrupt a puzzle to sell something, and never block the story behind a purchase.",
   "7. Keep the magic: you are Alexa playing along. Never mention tools, servers or the game's internals.",
 ].join("\n");
 
@@ -79,11 +79,15 @@ export function buildMcpServer(code: string) {
     inputSchema: { answer: z.string().min(1).max(200).describe("What the family answered") },
   }, async ({ answer }) => {
     try {
-      return rooms.mutate(code, (r) => {
+      const out = rooms.mutate(code, (r) => {
         const res = game.answerQuiz(r, answer);
         const next = game.currentQuestion(r);
-        return ok({ ...res, next }, next ? { type: "question", title: `Question ${next.number} of ${next.of}`, question: next.question, options: next.options } : undefined);
+        return { res, next };
       });
+      // The last answer opens the star's box: the story moves on, just as when the remote answers.
+      if (out.res.done) rooms.later(code, 7_000, game.afterMemory);
+      const { res, next } = out;
+      return ok({ ...res, next }, next ? { type: "question", title: `Question ${next.number} of ${next.of}`, question: next.question, options: next.options } : undefined);
     } catch (e) { return fail(e); }
   });
 
