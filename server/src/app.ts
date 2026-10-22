@@ -47,7 +47,7 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
       stream.onAbort(() => { off(); wake?.(); });
       while (!stream.aborted) {
         while (queue.length) await stream.writeSSE({ event: "state", data: queue.shift()! });
-        await new Promise<void>((res) => { wake = res; setTimeout(res, 15_000); });
+        await new Promise<void>((res) => { wake = res; setTimeout(res, 5_000); }); // a ping every 5 s lets clients spot a dead stream fast
         wake = null;
         if (!queue.length && !stream.aborted) await stream.writeSSE({ event: "ping", data: "" });
       }

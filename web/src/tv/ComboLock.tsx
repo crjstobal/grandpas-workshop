@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import { sfx } from "../sfx";
 import { useRemote } from "./remote";
+import { DRAWER_TOYS } from "../../../shared/story";
+import { SHELF } from "./spots";
 
-export function ComboLock({ code, onError, onClose }: { code: string; onError: (e: unknown) => void; onClose: () => void }) {
+/** The toys as they stand on the shelf, left to right (the order to dial is on the phone's key). */
+const ON_SHELF = [...DRAWER_TOYS].sort((a, b) => SHELF.fun.find((f) => f.id === a.id)!.x - SHELF.fun.find((f) => f.id === b.id)!.x);
+
+export function ComboLock({ code, found, onError, onClose }: { code: string; found: string[]; onError: (e: unknown) => void; onClose: () => void }) {
   const [digits, setDigits] = useState([0, 0, 0, 0]);
   const [at, setAt] = useState(0);
   const [shake, setShake] = useState(false);
@@ -32,7 +37,15 @@ export function ComboLock({ code, onError, onClose }: { code: string; onError: (
   });
 
   return (
+    <>
+    <div className="combo-backdrop" onClick={onClose} />
     <div className={`combo ${shake ? "nope" : ""}`}>
+      <button className="combo-close" onClick={onClose} aria-label="Close the lock">×</button>
+      <div className="combo-found">
+        {found.length
+          ? <>Numbers found: {ON_SHELF.filter((t) => found.includes(t.id)).map((t) => <span key={t.id}>{t.icon}<b>{t.digit}</b></span>)}</>
+          : <>No numbers yet: Jingle can peek under the toys first.</>}
+      </div>
       <div className="wheels">
         {digits.map((d, i) => (
           <div key={i} className={`wheel ${i === at ? "focus" : ""}`} onClick={() => setAt(i)}>
@@ -46,5 +59,6 @@ export function ComboLock({ code, onError, onClose }: { code: string; onError: (
       <button className="combo-open" onClick={() => void tryOpen()}>Open</button>
       <p className="combo-help">Arrows turn the wheels · OK opens · Back to look around</p>
     </div>
+    </>
   );
 }

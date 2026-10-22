@@ -176,7 +176,7 @@ export default function TvApp() {
       case "workshop":
         return { overlay: <Pieces state={s} intro onOk={() => pressOk(advance)} /> };
       case "drawer":
-        if (lockOpen) return { overlay: <><ToyTags found={found} /><ComboLock code={code} onError={fail} onClose={() => setLockOpen(false)} /></>, ownsRemote: true };
+        if (lockOpen) return { overlay: <><ComboLock code={code} found={found} onError={fail} onClose={() => setLockOpen(false)} /></>, ownsRemote: true };
         return {
           overlay: <ToyTags found={found} />,
           hand: <Hand bubble={bubble} mood={s.jingle.mood} help={HELP} hotspots={[SHELF.lock, ...SHELF.fun]} start={{ x: 960, y: 450 }} onPick={(h) => {
@@ -292,7 +292,7 @@ export default function TvApp() {
         {paused && <div className="paused-badge">Paused · press play to continue</div>}
         {leaving && (
           <div className="leave-confirm">
-            {qr && <div className="leave-join"><img src={qr} alt="Scan to join" /><span>Someone new? Scan to join</span></div>}
+            {qr && <div className="leave-join"><img src={qr} alt="Scan to join" /><span>Someone new? Scan to join · code <strong>{state?.code}</strong></span></div>}
             <h2>Leave Grandpa's Workshop?</h2>
             <p>Press <strong>OK</strong> to keep playing, or <strong>Back</strong> again to leave.</p>
             <p className="leave-new">Press <strong>Down</strong> to start a new game.</p>
@@ -438,12 +438,11 @@ function Lobby({ state, qr, onOk }: { state: PublicState; qr: string; onOk: () =
   );
 }
 
-/** Who is playing, in the corner. The QR code stays in the lobby (and in the Back menu, for late joiners). */
+/** Who is playing, in the corner. The QR and the code stay in the lobby (and the Back menu, for late joiners). */
 function Players({ state }: { state: PublicState }) {
   return (
     <div className="players">
       <div>
-        <span className="code">{state.code}</span>
         <ul>{state.players.map((p) => <li key={p.id} className={state.turn?.playerId === p.id ? "turn" : ""}><span className="dot" style={{ background: p.color }} />{p.name}</li>)}</ul>
       </div>
     </div>

@@ -67,25 +67,49 @@ export function useRoom(code: string | null) {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!code) return;
-    let streamed = false;
+    // Live updates come over Server-Sent Events. A browser closes an EventSource for good when the
+    // server answers with an error (a restart or deploy), and some proxies and TV browsers stall it
+    // quietly, so a watchdog reopens it, and polls the plain snapshot until the stream is back.
+    let alive = true;
+    let es: EventSource | null = null;
+    let lastHeard = Date.now();
     let poll: ReturnType<typeof setInterval> | null = null;
-    const es = new EventSource(`/api/rooms/${code}/events`);
-    es.addEventListener("state", (e) => {
-      streamed = true;
-      if (poll) { clearInterval(poll); poll = null; }
-      setState(JSON.parse((e as MessageEvent).data));
-      setError(null);
-    });
-    es.onerror = () => setError("Reconnecting to the workshop...");
     const fetchOnce = () => fetch(`/api/rooms/${code}`).then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((s: PublicState) => { setState(s); setError(null); })
-      .catch((st) => setError(st === 404 ? "This workshop has closed." : "Reconnecting to the workshop..."));
-    const fallback = setTimeout(() => {
-      if (streamed) return;
-      void fetchOnce();
-      poll = setInterval(fetchOnce, 1000);
-    }, 2500);
-    return () => { es.close(); clearTimeout(fallback); if (poll) clearInterval(poll); };
+      .then((s: PublicState) => { if (alive) { setState(s); setError(null); } })
+      .catch((st) => alive && setError(st === 404 ? "This workshop has closed." : "Reconnecting to the workshop..."));
+    const startPolling = () => { if (!poll) { void fetchOnce(); poll = setInterval(fetchOnce, 1000); } };
+    const stopPolling = () => { if (poll) { clearInterval(poll); poll = null; } };
+    const open = () => {
+      es?.close();
+      lastHeard = Date.now();
+      es = new EventSource(`/api/rooms/${code}/events`);
+      es.addEventListener("state", (e) => {
+        lastHeard = Date.now();
+        stopPolling();
+        setState(JSON.parse((e as MessageEvent).data));
+        setError(null);
+      });
+      es.addEventListener("ping", () => { lastHeard = Date.now(); });
+      es.onerror = () => { startPolling(); };
+    };
+    open();
+    // No first state within 2.5 s: poll while the stream gets going.
+    const first = setTimeout(() => { if (Date.now() - lastHeard >= 2400) startPolling(); }, 2500);
+    // The server pings every 5 s: 12 s of silence, or a closed stream, means reopen it.
+    const watchdog = setInterval(() => {
+      if (es?.readyState === EventSource.CLOSED || Date.now() - lastHeard > 12_000) { startPolling(); open(); }
+    }, 2000);
+    // Back from the background (a phone's screen turned off): catch up at once.
+    const onVisible = () => { if (document.visibilityState === "visible") { void fetchOnce(); open(); } };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      alive = false;
+      es?.close();
+      clearTimeout(first);
+      clearInterval(watchdog);
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [code]);
   return { state, error };
 }
