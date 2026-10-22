@@ -70,7 +70,7 @@ function Eyebrow({ icon, children, trailing }: { icon?: ReactNode; children: Rea
   );
 }
 
-/** Small product artwork tile: a night sky sleigh for stories, Grandpa's book for extras. */
+/** Small product artwork tile: a night sky sleigh for stories, Jingle in his scarf for the scarf. */
 export function ProductArt({ productId, large }: { productId: ProductId; large?: boolean }) {
   const kind = PRODUCTS[productId]?.kind ?? "story";
   return (
@@ -87,14 +87,8 @@ export function ProductArt({ productId, large }: { productId: ProductId; large?:
           <path d="M0 56 q16-6 32 0 t32 0 v8 h-64z" fill="#E8EEF5" opacity="0.85" />
         </svg>
       ) : (
-        <svg viewBox="0 0 64 64">
-          <path d="M14 14 h18 c3 0 5 2 5 5 v31 c0-2-2-4-5-4 h-18z" fill="#F6ECD9" />
-          <path d="M50 14 h-13 v36 c0-2 2-4 5-4 h8z" fill="#EADCC0" />
-          <path d="M14 14 v32 h18 c3 0 5 2 5 4" fill="none" stroke="#8A6224" strokeWidth="2" />
-          <path d="M19 22 h12 M19 28 h12 M19 34 h8" stroke="#8A6224" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-          <path d="M44 14 v14 l-3-2.5 -3 2.5 v-14" fill="#B23A2E" />
-          <path d="M46 38 l1.6 3.4 3.6.4-2.7 2.5.8 3.6-3.3-1.9-3.3 1.9.8-3.6-2.7-2.5 3.6-.4z" fill="#C8963E" />
-        </svg>
+        // the scarf: Jingle wearing it
+        <img src="/scenes/jingle_fly_a_scarf.png" alt="" style={{ width: "120%", height: "120%", objectFit: "contain", transform: "scaleX(-1) translate(8%, -6%)" }} />
       )}
     </span>
   );

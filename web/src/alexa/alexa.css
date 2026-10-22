@@ -299,3 +299,5 @@ button.ax-list-item:active { transform: scale(0.99); }
 }
 .ax-panel .ax-note { display: none; } /* the TV panel says who it is waiting for, beside the card */
 .ax, .ax *, .ax-overlay { box-sizing: border-box; }
+.ax-art { overflow: hidden; }
+.ax-art.extra { background: radial-gradient(circle at 50% 40%, #d98a3c, #5a2c10); }

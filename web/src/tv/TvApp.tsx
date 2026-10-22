@@ -164,6 +164,7 @@ export default function TvApp() {
         if (!s.key) return null; // the phone task at the bottom says what to do
         if (s.doorOpen) return { overlay: <div className="door-glow" /> };
         return {
+          hideNarration: true, // the key is scanned: the help line below says what's next
           hand: <Hand bubble={bubble} mood={s.jingle.mood} help="Carry the key to the lock · OK" hotspots={[DOOR.keyhole, DOOR.envelope, ...DOOR.fun]} start={{ x: 640, y: 760 }}
             carrying={<img className="carry-key" src={s.key.imageUrl} alt="" />}
             onPick={(h) => {
