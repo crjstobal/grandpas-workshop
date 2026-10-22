@@ -1,7 +1,7 @@
 // A 3D object on the phone made from the player's own drawing: the family's key (with four of
 // Grandpa's toys engraved on the back, the order of the drawer code) or their Christmas ornament.
 // Drag to turn it.
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { DRAWER_TOYS } from "../../../shared/story";
 import { applyDrawing, drawingTexture, frame, loadGlb, makeStage, textTexture } from "./three-kit";
@@ -21,39 +21,44 @@ function toyPlateTexture() {
   g.textAlign = "center";
   g.textBaseline = "middle";
   DRAWER_TOYS.forEach((t, i) => {
-    const x = i % 2 ? 358 : 154, y = i < 2 ? 160 : 360;
-    g.font = "150px 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Emoji', sans-serif";
-    g.fillText(t.icon, x, y + 10);
+    // a 2x2 grid well inside the circle: the medallion's raised rim covers the edge of the plate
+    const x = i % 2 ? 332 : 180, y = i < 2 ? 184 : 338;
+    g.font = "124px 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Emoji', sans-serif";
+    g.fillText(t.icon, x, y + 8);
     g.fillStyle = "#4a2f0e";
-    g.beginPath(); g.arc(x - 78, y - 74, 34, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(x - 56, y - 54, 26, 0, Math.PI * 2); g.fill();
     g.fillStyle = "#f6e2b0";
-    g.font = "800 46px Fraunces, Georgia, serif";
-    g.fillText(String(i + 1), x - 78, y - 71);
+    g.font = "800 36px Fraunces, Georgia, serif";
+    g.fillText(String(i + 1), x - 56, y - 52);
   });
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
-/** Swaps the embossed engraving of key.glb for the toy plate, on the same face of the medallion. */
+/** Swaps the embossed engraving of key.glb for the toy plate, on the same face of the medallion.
+ * Returns the plate, so the viewer can tell when its back faces the camera. */
 function engraveToys(obj: THREE.Object3D) {
   const old = obj.getObjectByName("Engraving");
   const plate = obj.getObjectByName("backplate") as THREE.Mesh | undefined;
-  if (!plate) return;
+  if (!plate) return null;
   if (old) old.visible = false;
   plate.geometry.computeBoundingBox();
   const box = plate.geometry.boundingBox!;
   const size = box.getSize(new THREE.Vector3()), centre = box.getCenter(new THREE.Vector3());
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(Math.max(size.x, size.y) / 2 * 1.04, 64),
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(Math.max(size.x, size.y) / 2 * 0.98, 64),
     new THREE.MeshStandardMaterial({ map: toyPlateTexture(), metalness: 0.35, roughness: 0.5 }));
   // in key.glb the medallion's back faces -Z: turn the disc round so it reads upright from behind
   disc.rotation.set(0, Math.PI, 0);
   disc.position.set(centre.x, centre.y, box.min.z - 0.0008);
   plate.add(disc);
+  return disc;
 }
 
 export function Viewer3D({ model, drawing, caption, extra }: { model: "key" | "ornament"; drawing: string | null; caption: string; extra?: ReactNode }) {
   const host = useRef<HTMLDivElement>(null);
+  // Once the family has turned the key round, the toys on its back stay readable below it.
+  const [backSeen, setBackSeen] = useState(false);
   useEffect(() => {
     const stage = makeStage(host.current!);
     let alive = true;
@@ -64,8 +69,16 @@ export function Viewer3D({ model, drawing, caption, extra }: { model: "key" | "o
         const tex = await drawingTexture(drawing).catch((e) => { console.warn("[gw] drawing texture failed", e); return null; });
         if (tex && alive) console.info("[gw] drawing applied to", applyDrawing(obj, tex), "meshes");
       }
-      if (model === "key") engraveToys(obj);
+      const back = model === "key" ? engraveToys(obj) : null;
       frame(obj, model === "key" ? 1.9 : 1.3);
+      if (back) {
+        const n = new THREE.Vector3(), p = new THREE.Vector3();
+        stage.onTick(() => {
+          back.getWorldDirection(n);
+          back.getWorldPosition(p);
+          if (n.dot(stage.camera.position.clone().sub(p).normalize()) > 0.6) setBackSeen(true);
+        });
+      }
       stage.scene.add(obj);
       if (model === "ornament") stage.onTick((dt) => { obj.rotation.z = Math.sin(performance.now() / 900) * 0.06; void dt; });
     })();
@@ -75,6 +88,11 @@ export function Viewer3D({ model, drawing, caption, extra }: { model: "key" | "o
   return (
     <div className="viewer">
       <div className="viewer-canvas" ref={host} />
+      {backSeen && (
+        <div className="key-order" aria-label="The toys on the back of the key, in order">
+          {DRAWER_TOYS.map((t, i) => <span key={t.id}><b>{i + 1}</b>{t.icon}</span>)}
+        </div>
+      )}
       <p>{caption}</p>
       {extra}
     </div>

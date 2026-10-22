@@ -8,6 +8,7 @@ import type { JingleMood } from "../../../shared/types";
 import { sfx } from "../sfx";
 import { pressOk } from "./remote";
 import { flySprite } from "./look";
+import { useLineVisible } from "./useLine";
 
 export interface Hotspot {
   id: string;
@@ -18,7 +19,6 @@ export interface Hotspot {
   label: string;
 }
 
-const BUBBLE_MS = 8000;
 const SPEED = 820; // px per second at full glide
 const SIZE = 210; // Jingle's sprite size on the 1920x1080 stage
 const BEAK = { x: (43 / 512) * SIZE, y: (218 / 512) * SIZE };
@@ -131,14 +131,8 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
     flyTo(x, y, nearest(hotRef.current, x, y, 1));
   };
 
-  // Jingle's words stay 8 seconds, then the scene is clear again.
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!bubble) return;
-    const t = setTimeout(() => setTick((n) => n + 1), Math.max(0, bubble.at + BUBBLE_MS - Date.now()) + 50);
-    return () => clearTimeout(t);
-  }, [bubble?.at]);
-  const showBubble = bubble && Date.now() - bubble.at < BUBBLE_MS;
+  const lineVisible = useLineVisible(bubble?.at);
+  const showBubble = bubble && lineVisible;
   return (
     <>
       <div className="hand-catcher" onPointerDown={onStageClick} />

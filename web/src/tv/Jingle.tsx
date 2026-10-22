@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ChapterId, JingleMood } from "../../../shared/types";
 import { GARDEN } from "./spots";
 import { flySprite, gardenSprites } from "./look";
+import { useLineVisible } from "./useLine";
 
 // Where Jingle is in each scene (stage pixels, bottom center of the sprite) and his size.
 // In the garden he sits on the workshop's snowy window ledge, with sprites rendered from that camera:
@@ -31,13 +32,7 @@ export function Jingle({ mood, line, at, chapter, shake }: { mood: JingleMood; l
   const sprite = garden ? perched.body : flySprite(frame);
   const [hasSprite, setHasSprite] = useState(true);
   const [bounce, setBounce] = useState(false);
-  // His words stay 8 seconds, then the scene is clear again.
-  const [saying, setSaying] = useState(true);
-  useEffect(() => {
-    setSaying(true);
-    const t = setTimeout(() => setSaying(false), 8000);
-    return () => clearTimeout(t);
-  }, [at]);
+  const saying = useLineVisible(at);
   const [jiggle, setJiggle] = useState(false);
   useEffect(() => {
     setBounce(true);
