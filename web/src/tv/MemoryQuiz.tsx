@@ -7,7 +7,7 @@ import type { PublicState } from "../../../shared/types";
 import { ALEXA_LINES } from "../../../shared/story";
 import { api } from "../api";
 import { sfx } from "../sfx";
-import { onSpeaking, speak, speaking } from "../voice";
+import { onSpeaking, speak, speaking, whenQuiet } from "../voice";
 import { pressOk, useRemote } from "./remote";
 import "./memory-quiz.css";
 
@@ -114,8 +114,12 @@ export function MemoryQuiz({ state }: { state: PublicState }) {
     if (!q) return;
     const first = spoken.current === null && shown === 0;
     spoken.current = shown;
-    if (first) speak("alexa", ALEXA_LINES.memoryIntro);
-    speak("alexa", `${q.question} Is it ${spokenOptions(q.options)}?`);
+    const ask = () => {
+      if (first) speak("alexa", ALEXA_LINES.memoryIntro);
+      speak("alexa", `${q.question} Is it ${spokenOptions(q.options)}?`);
+    };
+    // The first time, Alexa waits for the narrator and Jingle to finish introducing the chapter.
+    if (first) void whenQuiet(600).then(ask); else ask();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shown, right, quiz.done]);
 

@@ -1,10 +1,11 @@
 // The voice director: one voice at a time, never a pile-up.
 //
-// - "story" lines (the narrator, Grandpa's messages, the letter) are never dropped. They wait for
-//   whoever is talking to finish, and while one is waiting, Jingle's chatter is cleared.
-// - "chatter" (Jingle reacting to things) is disposable: only the latest queued line is kept, and
-//   it is dropped if it has waited too long to still make sense.
-// - "alexa" interrupts chatter, like a real assistant answering you.
+// - Nobody is ever cut off mid-line: each line waits for whoever is talking to finish, with a
+//   breath in between.
+// - "story" lines (the narrator, Grandpa, the letter) and Alexa are never dropped.
+// - "chatter" (Jingle reacting to things) keeps only its newest queued line, and drops it if it has
+//   waited so long it no longer makes sense.
+// - Only an explicit interrupt (the family asking Alexa something on the phone) stops the queue.
 // Music ducks while anyone speaks. Audio comes from the server (pre-rendered ElevenLabs lines,
 // live ElevenLabs, or Polly); the browser's own speech is the last resort.
 import { musicBox } from "./music";
@@ -14,7 +15,7 @@ export type LineKind = "story" | "chatter" | "alexa";
 
 interface Line { who: Speaker; text: string; kind: LineKind; at: number; done?: () => void }
 
-const CHATTER_MAX_WAIT_MS = 4000;
+const CHATTER_MAX_WAIT_MS = 15000;
 /** A breath between one line and the next, so voices never tread on each other. */
 const GAP_STORY_MS = 900;
 const GAP_CHATTER_MS = 450;
@@ -38,11 +39,7 @@ export function speak(who: Speaker, text: string, opts: { kind?: LineKind; inter
     if (kind === "chatter") {
       // Only the newest chatter waits; older chatter is stale by now.
       queue = queue.filter((l) => { if (l.kind === "chatter") { l.done?.(); return false; } return true; });
-      if (queue.some((l) => l.kind === "story")) { done(); return; }
-    } else {
-      queue = queue.filter((l) => { if (l.kind === "chatter") { l.done?.(); return false; } return true; });
     }
-    if (kind === "alexa" && current?.line.kind === "chatter") skip();
     queue.push(line);
     prefetch(line);
     void pump();

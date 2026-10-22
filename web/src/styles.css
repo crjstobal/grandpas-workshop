@@ -226,7 +226,7 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------------- TV: point and click ---------------- */
 .hand { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; will-change: transform; }
-.hand-catcher { position: absolute; inset: 0; z-index: 1; }
+.hand-catcher { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .hand-icon { position: absolute; left: -20px; top: -8px; filter: drop-shadow(0 8px 10px #000a); transform-origin: 22% 8%; transform: rotate(-12deg); }
 .hand-icon.press { animation: press 0.25s ease; }
 @keyframes press { 50% { transform: rotate(-12deg) scale(0.86); } }
@@ -238,7 +238,7 @@ button { font: inherit; cursor: pointer; }
 .carry-record { width: 160px; height: 160px; border-radius: 50%; background: repeating-radial-gradient(#111 0 4px, #262626 4px 6px); position: relative; animation: spin 6s linear infinite; }
 .carry-record::after { content: ""; position: absolute; inset: 56px; border-radius: 50%; background: var(--holly); }
 
-.hotspot { position: absolute; z-index: 5; border-radius: 50%; cursor: pointer; transition: box-shadow 0.2s, background 0.2s; }
+.hotspot { position: absolute; z-index: 5; border-radius: 50%; pointer-events: none; transition: box-shadow 0.2s, background 0.2s; }
 .hotspot.on { background: radial-gradient(circle, #ffe9a855, transparent 70%); box-shadow: 0 0 0 4px #ffe9a8cc, 0 0 40px #ffd36b; animation: glow 1.2s ease-in-out infinite; }
 @keyframes glow { 50% { box-shadow: 0 0 0 7px #ffe9a8, 0 0 60px #ffd36b; } }
 .hotspot-label { position: absolute; z-index: 21; transform: translate(-50%, -100%); padding: 8px 18px; border-radius: 12px; background: #0d1b2ae6; border: 2px solid var(--brass); font-size: 26px; font-weight: 800; white-space: nowrap; pointer-events: none; }
@@ -455,3 +455,6 @@ button { font: inherit; cursor: pointer; }
 .orch-count { position: absolute; z-index: 22; left: 50%; top: 42%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 60px 20px; border-radius: 28px; background: #0d1b2ae0; border: 3px solid var(--brass); box-shadow: 0 20px 60px #000b; animation: pop 0.35s cubic-bezier(.2,1.6,.4,1); }
 .orch-count span { font-size: 34px; font-weight: 800; color: #ffe2a0; }
 .orch-count strong { font-family: var(--serif); font-size: 120px; line-height: 1; }
+
+/* pointer remotes: everything clickable lights up under the pointer */
+.tv-viewport button:hover:not(:disabled), .warm-item:hover img, .warm-scarf:hover, .wheel:hover, .store-tile:hover, .store-hero:hover { box-shadow: 0 0 0 4px var(--brass), 0 0 32px #ffd36b99; }

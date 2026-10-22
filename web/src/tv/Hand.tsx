@@ -3,7 +3,7 @@
 // use he is pulled in gently, the spot glows and its name shows. OK makes him use whatever is
 // under him. He can carry things hanging from his beak (a key, a record...), and his speech
 // bubble follows him around.
-import { useEffect, useRef, useState, type MutableRefObject, type ReactNode, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import type { JingleMood } from "../../../shared/types";
 import { sfx } from "../sfx";
 import { pressOk } from "./remote";
@@ -46,6 +46,7 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
   const posState = useRef(pos);
   const held = useRef(new Set<string>());
   const heldSince = useRef(0);
+  const lastPointer = useRef(-1e9);
   const hotRef = useRef(hotspots);
   hotRef.current = hotspots;
   const pickRef = useRef(onPick);
@@ -87,8 +88,8 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
         // Ease in: slow for precision, then glide.
         const k = Math.min(1, 0.35 + (t - heldSince.current) / 600);
         for (const key of held.current) { const [dx, dy] = ARROWS[key]; x += dx * SPEED * k * dt; y += dy * SPEED * k * dt; }
-      } else {
-        // Magnet: settle onto the nearest spot when close.
+      } else if (t - lastPointer.current > 1500) {
+        // Magnet: settle onto the nearest spot when close (not while a pointer is steering him).
         const near = nearest(hotRef.current, x, y, 1.5);
         if (near) { x += (near.x - x) * Math.min(1, dt * 6); y += (near.y - y) * Math.min(1, dt * 6); }
       }
@@ -117,32 +118,56 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
     setPos(posState.current);
   }
 
-  // Pointer remotes (Samsung and LG TV browsers, a laptop's mouse): a click flies Jingle there,
-  // and on a spot it picks it, just like the arrows and OK.
-  function flyTo(x: number, y: number, h: Hotspot | null) {
-    posState.current = { x: Math.max(60, Math.min(1860, x)), y: Math.max(90, Math.min(1040, y)) };
-    setPos(posState.current);
-    if (x !== pos.x) setFacing(x > pos.x ? 1 : -1);
-    if (!h) return;
-    hoverRef.current = h;
-    setHover(h);
-    pressOk(() => { setTap((t) => t + 1); pickRef.current(h); });
-  }
-  const onStageClick = (e: PointerEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - r.left) / r.width) * 1920, y = ((e.clientY - r.top) / r.height) * 1080;
-    flyTo(x, y, nearest(hotRef.current, x, y, 1));
-  };
+  // Pointer remotes (Samsung and LG TV browsers, a laptop's mouse): Jingle follows the pointer,
+  // the spot under him lights up, and a click picks it, just like the arrows and OK. Listened to on
+  // the whole page, so nothing drawn on top (falling sparkles, ornaments) swallows the clicks.
+  const stageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const toStage = (e: globalThis.PointerEvent) => {
+      const el = stageRef.current;
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return null;
+      return { x: ((e.clientX - r.left) / r.width) * 1920, y: ((e.clientY - r.top) / r.height) * 1080 };
+    };
+    // buttons and dialogs handle their own clicks
+    const ownsClick = (e: globalThis.PointerEvent) => !!(e.target as Element | null)?.closest?.("button, a, input, .combo, .combo-backdrop, .warm-tray, .sheet");
+    const moveTo = (p: { x: number; y: number }) => {
+      const x = Math.max(60, Math.min(1860, p.x)), y = Math.max(90, Math.min(1040, p.y));
+      if (Math.abs(x - posState.current.x) > 2) setFacing(x > posState.current.x ? 1 : -1);
+      posState.current = { x, y };
+      setPos(posState.current);
+      lastPointer.current = performance.now();
+    };
+    const onMove = (e: globalThis.PointerEvent) => {
+      if (e.pointerType === "touch" || ownsClick(e)) return;
+      const p = toStage(e);
+      if (p) moveTo(p);
+    };
+    const onDown = (e: globalThis.PointerEvent) => {
+      if (ownsClick(e)) return;
+      const p = toStage(e);
+      if (!p) return;
+      moveTo(p);
+      const h = nearest(hotRef.current, p.x, p.y, 1);
+      if (!h) return;
+      hoverRef.current = h;
+      setHover(h);
+      pressOk(() => { setTap((n) => n + 1); pickRef.current(h); });
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerdown", onDown);
+    return () => { document.removeEventListener("pointermove", onMove); document.removeEventListener("pointerdown", onDown); };
+  }, []);
 
   const lineVisible = useLineVisible(bubble?.at);
   const showBubble = bubble && lineVisible;
   return (
     <>
-      <div className="hand-catcher" onPointerDown={onStageClick} />
+      <div className="hand-catcher" ref={stageRef} />
       {hotspots.map((h) => (
         <div key={h.id} className={`hotspot ${(hoverGlow && hover?.id === h.id) || glow === h.id ? "on" : ""} ${glow === h.id ? "play" : ""}`}
-          style={{ left: h.x - h.r, top: h.y - h.r, width: h.r * 2, height: h.r * 2 }}
-          onPointerDown={(e) => { e.stopPropagation(); flyTo(h.x, h.y, h); }} />
+          style={{ left: h.x - h.r, top: h.y - h.r, width: h.r * 2, height: h.r * 2 }} />
       ))}
       {hover && hoverGlow && <div className="hotspot-label" style={{ left: hover.x, top: hover.y - hover.r - 16 }}>{hover.label}</div>}
       <div className="hand" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
