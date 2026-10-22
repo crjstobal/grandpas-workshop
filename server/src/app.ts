@@ -115,7 +115,13 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
   step("quiz", (r, b) => game.answerQuiz(r, Number(b.pick)).done, game.afterMemory, 7_000);
   step("catch", (r) => game.catchSparkle(r), game.afterStarlight, 6_000);
   step("flight", (r, b) => game.flightProgress(r, Number(b.progress)), game.afterFlight, 5_000);
-  step("finale", (r, b) => game.setFinale(r, String(b.phase ?? "") as never));
+  step("finale", (r, b) => {
+    const phase = String(b.phase ?? "");
+    game.setFinale(r, phase as never);
+    // While the family decorates the gingerbread (minutes), Grandpa's letter is written and voiced,
+    // so it is read the moment the cookie is done.
+    if (phase === "cookie") prepareLetter(r.code);
+  });
 
   // ---- the gingerbread for Grandpa ----
   app.post("/api/rooms/:code/stroke", bodyLimit({ maxSize: 32 * 1024 }), async (c) => {
@@ -243,15 +249,29 @@ export function createApp(opts: { phoneBaseUrl: () => string }) {
   return app;
 }
 
-async function finale(code: string) {
-  try {
-    const m = game.memories(rooms.get(code));
-    const letter = await writeLetter(m);
-    rooms.mutate(code, (r) => game.setLetter(r, letter));
-  } catch (e) {
-    console.error(e);
-    rooms.mutate(code, (r) => game.setLetter(r, "My dears,\nYou lit my star, and I found my way home. Merry Christmas.\nWith all my love, Grandpa Felix"));
+const FALLBACK_LETTER = "My dears,\nYou lit my star, and I found my way home. Merry Christmas.\nWith all my love, Grandpa Felix";
+const letters = new Map<string, Promise<string>>();
+
+/** Writes Grandpa's letter (Nova) and renders his voice reading it, once per game. The TV reads the
+ * letter with newlines turned into spaces, so the audio is cached under that exact text. */
+function prepareLetter(code: string) {
+  let p = letters.get(code);
+  if (!p) {
+    p = (async () => {
+      let letter = FALLBACK_LETTER;
+      try { letter = await writeLetter(game.memories(rooms.get(code))); } catch (e) { console.error(e); }
+      void speak("grandpa", letter.replace(/\n+/g, " ")).catch(() => {});
+      return letter;
+    })();
+    letters.set(code, p);
+    setTimeout(() => letters.delete(code), 30 * 60_000).unref();
   }
+  return p;
+}
+
+async function finale(code: string) {
+  const letter = await prepareLetter(code);
+  rooms.mutate(code, (r) => game.setLetter(r, letter));
 }
 
 function ip(req: Request) {
