@@ -8,7 +8,7 @@ import QRCode from "qrcode";
 import { ALEXA_LINES, CHAPTER_COUNT, CHAPTERS, GRANDPA, chapterNumber, chapterOf } from "../../../shared/story";
 import type { Find, PublicState } from "../../../shared/types";
 import { api, useRoom } from "../api";
-import { speak, stop, togglePause } from "../voice";
+import { onLine, speak, stop, togglePause } from "../voice";
 import { backgroundMusic, musicBox } from "../music";
 import { sfx } from "../sfx";
 import { Jingle } from "./Jingle";
@@ -199,7 +199,7 @@ export default function TvApp() {
       case "globe":
         return { overlay: <GlobeTv state={s} />, hideNarration: true };
       case "orchestra":
-        return { hand: <Orchestra state={s} bubble={bubble} onSay={jingleSays} />, overlay: <Pieces state={s} /> };
+        return { hand: <Orchestra state={s} bubble={bubble} onSay={jingleSays} /> };
       case "record":
         if (!s.recordPlaying) {
           return {
@@ -279,12 +279,13 @@ export default function TvApp() {
 
         {showJingle && <Jingle mood={jingle!.mood} line={jingle!.line} at={jingle!.at} chapter={state!.chapter} shake={state!.lastShake?.at} />}
 
-        {state && !["lobby", "message"].includes(state.chapter) && !play?.hideNarration && story.caption && !(story.told && !ch.phoneTask) && (
-          <div className={`narration ${handActive ? "top" : ""} ${story.told ? "told" : ""}`}>
-            <p>{story.caption}</p>
-            {ch.phoneTask && <p className="task"><PhoneIcon /> {turnTask(state) ?? ch.phoneTask}</p>}
+        {state && !["lobby", "message"].includes(state.chapter) && !play?.hideNarration && ch.phoneTask && (
+          <div className={`narration ${handActive ? "top" : ""}`}>
+            <p className="task"><PhoneIcon /> {turnTask(state) ?? ch.phoneTask}</p>
           </div>
         )}
+        {/* the narrator and Grandpa, subtitled while they speak (his letter has its own page) */}
+        {state && !(state.chapter === "finale" && state.finale === "letter") && <Subtitles raised={!!(ch.phoneTask && !play?.hideNarration) || handActive} />}
 
         {play?.hand}
 
@@ -332,9 +333,6 @@ function useStory(state: PublicState | null) {
   const recordOn = useRef(false);
   const finale = useRef<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [caption, setCaption] = useState("");
-  /** The narrator has finished this chapter's text: it leaves the screen (the phone task stays). */
-  const [told, setTold] = useState(false);
 
   useEffect(() => {
     if (!state) return;
@@ -342,16 +340,13 @@ function useStory(state: PublicState | null) {
     if (state.chapter !== lastChapter.current) {
       lastChapter.current = state.chapter;
       const ch = chapterOf(state.chapter);
-      setCaption(ch.narration);
-      setTold(false);
-      const chapter = state.chapter;
       if (state.chapter === "message") {
         setBusy(true);
         void speak("alexa", ALEXA_LINES.newMessage, { kind: "story" })
           .then(() => speak("grandpa", GRANDPA.stuck))
           .then(() => setBusy(false));
       } else if (ch.narration) {
-        void speak("narrator", ch.narration).then(() => setTimeout(() => { if (lastChapter.current === chapter) setTold(true); }, 2500));
+        void speak("narrator", ch.narration);
       }
       if (state.jingle.intro && state.jingle.line) {
         lastJingle.current = state.jingle.at;
@@ -391,7 +386,7 @@ function useStory(state: PublicState | null) {
     }
   }, [state]);
   useEffect(() => () => stop(), []);
-  return { busy, caption, told };
+  return { busy };
 }
 
 /** Every shake from a phone clicks Jingle's key on the TV. */
@@ -434,6 +429,18 @@ function Lobby({ state, qr, onOk }: { state: PublicState; qr: string; onOk: () =
           </TvButton>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Subtitles({ raised }: { raised: boolean }) {
+  const [line, setLine] = useState<{ who: string; text: string } | null>(null);
+  useEffect(() => onLine((l) => setLine(l && (l.who === "narrator" || l.who === "grandpa") ? l : null)), []);
+  if (!line) return null;
+  return (
+    <div className={`subtitles ${raised ? "raised" : ""} ${line.who}`} key={line.text}>
+      {line.who === "grandpa" && <span className="who">Grandpa</span>}
+      <p>{line.text}</p>
     </div>
   );
 }

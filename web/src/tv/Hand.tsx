@@ -25,7 +25,7 @@ const BEAK = { x: (43 / 512) * SIZE, y: (218 / 512) * SIZE };
 const ARROWS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 const OK_KEYS = new Set(["Enter", "NumpadEnter", " ", "Select", "Accept"]);
 
-export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "awake", glow, posRef }: {
+export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "awake", glow, posRef, hoverGlow = true }: {
   hotspots: Hotspot[];
   onPick: (h: Hotspot | null) => void;
   carrying?: ReactNode;
@@ -36,6 +36,9 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
   mood?: JingleMood;
   /** A spot to light up without Jingle being on it (the toy orchestra uses it). */
   glow?: string | null;
+  /** False while the family must just watch: the spot under Jingle doesn't light up, so only the
+   * toy that is playing glows. */
+  hoverGlow?: boolean;
   /** Receives Jingle's position every frame, for mini games that need it. */
   posRef?: MutableRefObject<{ x: number; y: number }>;
 }) {
@@ -137,11 +140,11 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
     <>
       <div className="hand-catcher" onPointerDown={onStageClick} />
       {hotspots.map((h) => (
-        <div key={h.id} className={`hotspot ${hover?.id === h.id || glow === h.id ? "on" : ""} ${glow === h.id ? "play" : ""}`}
+        <div key={h.id} className={`hotspot ${(hoverGlow && hover?.id === h.id) || glow === h.id ? "on" : ""} ${glow === h.id ? "play" : ""}`}
           style={{ left: h.x - h.r, top: h.y - h.r, width: h.r * 2, height: h.r * 2 }}
           onPointerDown={(e) => { e.stopPropagation(); flyTo(h.x, h.y, h); }} />
       ))}
-      {hover && <div className="hotspot-label" style={{ left: hover.x, top: hover.y - hover.r - 16 }}>{hover.label}</div>}
+      {hover && hoverGlow && <div className="hotspot-label" style={{ left: hover.x, top: hover.y - hover.r - 16 }}>{hover.label}</div>}
       <div className="hand" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>
         {carrying && <div className="carry">{carrying}</div>}
         <JingleFlying key={tap} pecking={tap > 0} facing={facing} moving={moving} mood={mood} />

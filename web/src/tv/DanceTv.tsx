@@ -192,7 +192,9 @@ export function DanceTv({ state, bubble }: { state: PublicState; bubble: { line:
   const secs = Math.ceil(remaining / 1000);
   const waitingForRecord = phase === "intro" && !d.until;
   const caughtPlayer = d.caught ? state.players.find((p) => p.name === d.caught) : undefined;
-  const showBubble = bubble && Date.now() - bubble.at < 7000 && phase !== "freeze";
+  // Only one thing to read at a time: during the countdown, the dance and the freeze the big titles
+  // say it all (Jingle's voice still talks); his bubble is for being caught and for the end.
+  const showBubble = bubble && Date.now() - bubble.at < 7000 && (phase === "caught" || phase === "done");
   const doneRounds = phase === "done" ? d.rounds : d.round;
 
   return (
@@ -214,7 +216,6 @@ export function DanceTv({ state, bubble }: { state: PublicState; bubble: { line:
         </div>
         {phase === "freeze" && <div className="dt-ice" />}
         {phase === "caught" && d.caught === "Jingle" && <DizzyStars />}
-        {phase === "music" && d.round === 0 && <div className="dt-jingle-hint">Arrows make me dance!</div>}
         {showBubble && <div className={`bubble dt-bubble ${jingle.current.x > 1100 ? "left" : "right"}`} key={bubble!.at}>{bubble!.line}</div>}
       </div>
 

@@ -6,7 +6,7 @@ import type { PublicState } from "../../../shared/types";
 import { api } from "../api";
 import { sfx, playNote } from "../sfx";
 import { Hand, type Hotspot } from "./Hand";
-import { speak } from "../voice";
+import { speak, whenQuiet } from "../voice";
 
 interface Toy extends Hotspot { note: number; sound: "drum" | "toot" | "whirr" | "chime" | "knock" }
 
@@ -39,20 +39,43 @@ export function Orchestra({ state, bubble, onSay }: { state: PublicState; bubble
   const [glow, setGlow] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [replay, setReplay] = useState(0);
+  const [count, setCount] = useState(0);
 
-  // The toys play the tune, one glowing toy at a time.
+  // First everyone stops talking, then "Listen carefully... 3, 2, 1", then the toys play the tune,
+  // one glowing toy at a time. Nothing else makes a sound while they play.
   useEffect(() => {
     if (done) return;
     setPhase("listen");
     setStep(0);
+    setGlow(null);
+    setCount(0);
+    let cancelled = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
-    const start = replay === 0 && round === 1 ? 5200 : 1600;
-    notes.forEach((t, i) => {
-      timers.push(setTimeout(() => { setGlow(t.id); playToy(t); }, start + i * 850));
-      timers.push(setTimeout(() => setGlow(null), start + i * 850 + 600));
-    });
-    timers.push(setTimeout(() => { setPhase("play"); speak("jingle", "Your turn!"); }, start + notes.length * 850 + 200));
-    return () => timers.forEach(clearTimeout);
+    const wait = (ms: number) => new Promise<void>((r) => timers.push(setTimeout(r, ms)));
+    (async () => {
+      await whenQuiet(700);
+      for (const c of [3, 2, 1]) {
+        if (cancelled) return;
+        setCount(c);
+        sfx.tick();
+        await wait(800);
+      }
+      if (cancelled) return;
+      setCount(0);
+      await wait(400);
+      for (const t of notes) {
+        if (cancelled) return;
+        setGlow(t.id); playToy(t);
+        await wait(600);
+        setGlow(null);
+        await wait(300);
+      }
+      if (cancelled) return;
+      await wait(300);
+      setPhase("play");
+      speak("jingle", "Your turn!");
+    })();
+    return () => { cancelled = true; timers.forEach(clearTimeout); };
   }, [notes, replay, done, round]);
 
   const pick = (h: Hotspot | null) => {
@@ -78,10 +101,17 @@ export function Orchestra({ state, bubble, onSay }: { state: PublicState; bubble
     <>
       <div className="orchestra-meter">
         {Array.from({ length: ORCHESTRA_ROUNDS }, (_, i) => <span key={i} className={i < state.orchestraRound ? "on" : ""}>♪</span>)}
-        <em>{done ? "Bravo!" : phase === "listen" ? "Listen..." : `Your turn: ${step} of ${notes.length}`}</em>
+        <em>{done ? "Bravo!" : phase === "listen" ? "Listen carefully..." : `Your turn: ${step} of ${notes.length}`}</em>
       </div>
-      <Hand hotspots={TOYS} glow={glow} onPick={pick} bubble={bubble} start={{ x: 960, y: 420 }}
-        help={phase === "listen" ? "Watch which toys play" : "Fly to each toy in order · OK"} />
+      {count > 0 && (
+        <div className="orch-count" key={count}>
+          <span>Listen carefully</span>
+          <strong>{count}</strong>
+        </div>
+      )}
+      {/* while the toys play, nothing else on screen: no bubble, no help line */}
+      <Hand hotspots={TOYS} glow={glow} onPick={pick} bubble={phase === "play" ? bubble : null} start={{ x: 960, y: 420 }} hoverGlow={phase === "play"}
+        help={phase === "play" ? "Fly to each toy in order · OK" : undefined} />
     </>
   );
 }

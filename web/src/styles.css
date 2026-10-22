@@ -45,10 +45,6 @@ button { font: inherit; cursor: pointer; }
 
 .narration { position: absolute; left: 0; right: 0; bottom: 0; padding: 34px 120px 40px; background: linear-gradient(transparent, #0d1b2af2 30%); text-align: center; }
 .narration p { margin: 0 auto; max-width: 1500px; font-family: var(--serif); font-size: 44px; line-height: 1.25; text-shadow: 0 2px 10px #000a; }
-/* once the narrator has read it, the text goes and only the phone task stays */
-.narration.told > p:first-child { animation: told-out 0.8s ease forwards; overflow: hidden; }
-@keyframes told-out { from { max-height: 300px; } to { opacity: 0; max-height: 0; margin: 0; } }
-.narration.told .task { margin-top: 0; }
 .narration .task { margin-top: 18px; font-family: var(--sans); font-size: 34px; font-weight: 800; color: #ffe2a0; display: inline-flex; align-items: center; gap: 14px; padding: 10px 28px; background: #ffffff14; border-radius: 14px; border: 2px dashed #ffe2a080; }
 
 .tv-button { border: 0; padding: 22px 44px; border-radius: 16px; font-size: 32px; font-weight: 800; background: var(--paper-2); color: var(--ink); }
@@ -448,3 +444,14 @@ button { font: inherit; cursor: pointer; }
 
 .leave-join { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 18px; font-size: 24px; font-weight: 700; }
 .leave-join img { width: 220px; height: 220px; border-radius: 12px; }
+
+/* subtitles: the narrator and Grandpa, only while they speak */
+.subtitles { position: absolute; z-index: 25; left: 50%; bottom: 40px; transform: translateX(-50%); width: 1500px; text-align: center; pointer-events: none; animation: sub-in 0.35s ease; }
+.subtitles.raised { bottom: 150px; }
+.subtitles p { display: inline; margin: 0; padding: 10px 26px; font-family: var(--serif); font-size: 42px; line-height: 1.5; color: #fffaf0; background: #0b1320d9; border-radius: 14px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.subtitles .who { display: block; margin-bottom: 8px; font-size: 24px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #ffe2a0; }
+@keyframes sub-in { from { opacity: 0; transform: translate(-50%, 10px); } }
+
+.orch-count { position: absolute; z-index: 22; left: 50%; top: 42%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 60px 20px; border-radius: 28px; background: #0d1b2ae0; border: 3px solid var(--brass); box-shadow: 0 20px 60px #000b; animation: pop 0.35s cubic-bezier(.2,1.6,.4,1); }
+.orch-count span { font-size: 34px; font-weight: 800; color: #ffe2a0; }
+.orch-count strong { font-family: var(--serif); font-size: 120px; line-height: 1; }

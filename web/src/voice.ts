@@ -15,6 +15,9 @@ export type LineKind = "story" | "chatter" | "alexa";
 interface Line { who: Speaker; text: string; kind: LineKind; at: number; done?: () => void }
 
 const CHATTER_MAX_WAIT_MS = 4000;
+/** A breath between one line and the next, so voices never tread on each other. */
+const GAP_STORY_MS = 900;
+const GAP_CHATTER_MS = 450;
 
 let queue: Line[] = [];
 let current: { line: Line; audio: HTMLAudioElement | null } | null = null;
@@ -70,6 +73,26 @@ export function onSpeaking(fn: (who: Speaker | null) => void) {
 }
 export const speaking = () => current?.line.who ?? null;
 
+/** What is being said right now, for subtitles. */
+const lineListeners = new Set<(line: { who: Speaker; text: string } | null) => void>();
+export function onLine(fn: (line: { who: Speaker; text: string } | null) => void) {
+  lineListeners.add(fn);
+  fn(current ? { who: current.line.who, text: current.line.text } : null);
+  return () => { lineListeners.delete(fn); };
+}
+
+/** Resolves once nobody has been speaking (and nothing is queued) for `quietMs`: a game waits for
+ * it before playing sounds the family has to listen to. */
+export function whenQuiet(quietMs = 700): Promise<void> {
+  return new Promise((resolve) => {
+    let since = Date.now();
+    const t = setInterval(() => {
+      if (current || queue.length || pumping) since = Date.now();
+      else if (Date.now() - since >= quietMs) { clearInterval(t); resolve(); }
+    }, 100);
+  });
+}
+
 function emit(who: Speaker | null) {
   musicBox.duck(who === null ? null : who === "narrator" || who === "grandpa" ? "story" : "chat");
   for (const l of listeners) l(who);
@@ -107,9 +130,12 @@ async function pump() {
       const src = await prefetch(line);
       current = { line, audio: null };
       emit(line.who);
+      for (const l of lineListeners) l({ who: line.who, text: line.text });
       if (src) await playAudio(src); else await browserSpeak(line);
       if (current?.line === line) { current = null; line.done?.(); }
+      for (const l of lineListeners) l(null);
       emit(null);
+      if (queue.length) await new Promise((r) => setTimeout(r, line.kind === "chatter" ? GAP_CHATTER_MS : GAP_STORY_MS));
     }
   } finally {
     pumping = false;

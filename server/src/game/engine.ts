@@ -437,7 +437,7 @@ export function startDance(r: Room) {
   r.dance = { ...r.dance, phase: "intro", until: Date.now() + DANCE_INTRO_MS };
 }
 
-const DANCE_INTRO_MS = 6000;
+const DANCE_INTRO_MS = 10000; // Jingle explains first, then the countdown: never music over his voice
 const FREEZE_MS = 3500;
 const FREEZE_GRACE_MS = 900;
 const CAUGHT_MS = 3500;
