@@ -511,15 +511,18 @@ function WarmTray({ state, onError }: { state: PublicState; onError: (e: unknown
     right: () => { setFocus((f) => Math.min(scarfAt, f + 1)); sfx.hover(); },
     down: () => { setFocus(scarfAt); sfx.hover(); },
     up: () => { if (tray.length) { setFocus(0); sfx.hover(); } },
-    ok: () => {
-      if (focus === scarfAt) { void buyScarf(); return; }
-      const f = tray[focus];
+    ok: () => give(focus),
+  }, !dialogOpen);
+  function give(i: number) {
+    {
+      if (i === scarfAt) { void buyScarf(); return; }
+      const f = tray[i];
       if (!f || flying) return;
       sfx.pop();
       setFlying(f.id);
       setTimeout(() => { setFlying(null); sfx.chime(); api.give(state.code, f.id).catch(onError); }, 900);
-    },
-  }, !dialogOpen);
+    }
+  }
   const name = (id: string) => state.players.find((p) => p.id === id)?.name ?? "";
   const given = state.warmFinds.filter((f) => f.given);
   return (
@@ -528,7 +531,8 @@ function WarmTray({ state, onError }: { state: PublicState; onError: (e: unknown
         <span className="tray-title">{tray.length ? "Arrows pick · OK gives it to Jingle" : `Warm things for Jingle: ${given.length} of ${state.warmNeeded}`}</span>
         <div className="warm-items">
           {tray.map((f, i) => (
-            <figure key={f.id} className={`warm-item ${i === focus ? "focus" : ""} ${flying === f.id ? "fly" : ""}`}>
+            <figure key={f.id} className={`warm-item ${i === focus ? "focus" : ""} ${flying === f.id ? "fly" : ""}`}
+              onClick={() => { setFocus(i); give(i); }}>
               <img src={f.imageUrl} alt={f.label} />
               <figcaption>{name(f.playerId)}: {f.label}</figcaption>
             </figure>
@@ -536,7 +540,7 @@ function WarmTray({ state, onError }: { state: PublicState; onError: (e: unknown
           {!tray.length && <p className="warm-empty"><PhoneIcon /> Take a photo of something warm with a phone</p>}
         </div>
         {!scarfOwned && (
-          <div className={`warm-scarf ${focus === scarfAt ? "focus" : ""}`}>
+          <div className={`warm-scarf ${focus === scarfAt ? "focus" : ""}`} onClick={() => { setFocus(scarfAt); void buyScarf(); }}>
             <img src="/scenes/jingle_fly_a_scarf.png" alt="" />
             <div>
               <span className="warm-or">or</span>

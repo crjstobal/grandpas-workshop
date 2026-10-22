@@ -298,7 +298,7 @@ export function acceptFind(r: Room, playerId: string, kind: ScanKind, label: str
     say(r, `${jingleLine} Now carry it to the lock with the remote!`, "happy");
   } else if (kind === "warm") {
     r.warmFinds.push(find);
-    say(r, `${jingleLine} Carry it over to me with the remote!`, "cold");
+    say(r, `${jingleLine} Pick it on the TV and give it to me!`, "cold");
     if (r.warmFinds.length < warmNeeded(r)) endTurn(r); else r.turn = null;
   } else if (kind === "ornament") {
     r.ornaments.push(find);

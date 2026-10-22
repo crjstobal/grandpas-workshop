@@ -3,7 +3,7 @@
 // use he is pulled in gently, the spot glows and its name shows. OK makes him use whatever is
 // under him. He can carry things hanging from his beak (a key, a record...), and his speech
 // bubble follows him around.
-import { useEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
+import { useEffect, useRef, useState, type MutableRefObject, type ReactNode, type PointerEvent } from "react";
 import type { JingleMood } from "../../../shared/types";
 import { sfx } from "../sfx";
 import { pressOk } from "./remote";
@@ -113,12 +113,31 @@ export function Hand({ hotspots, onPick, carrying, start, help, bubble, mood = "
     setPos(posState.current);
   }
 
+  // Pointer remotes (Samsung and LG TV browsers, a laptop's mouse): a click flies Jingle there,
+  // and on a spot it picks it, just like the arrows and OK.
+  function flyTo(x: number, y: number, h: Hotspot | null) {
+    posState.current = { x: Math.max(60, Math.min(1860, x)), y: Math.max(90, Math.min(1040, y)) };
+    setPos(posState.current);
+    if (x !== pos.x) setFacing(x > pos.x ? 1 : -1);
+    if (!h) return;
+    hoverRef.current = h;
+    setHover(h);
+    pressOk(() => { setTap((t) => t + 1); pickRef.current(h); });
+  }
+  const onStageClick = (e: PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 1920, y = ((e.clientY - r.top) / r.height) * 1080;
+    flyTo(x, y, nearest(hotRef.current, x, y, 1));
+  };
+
   const showBubble = bubble && Date.now() - bubble.at < 12000;
   return (
     <>
+      <div className="hand-catcher" onPointerDown={onStageClick} />
       {hotspots.map((h) => (
         <div key={h.id} className={`hotspot ${hover?.id === h.id || glow === h.id ? "on" : ""} ${glow === h.id ? "play" : ""}`}
-          style={{ left: h.x - h.r, top: h.y - h.r, width: h.r * 2, height: h.r * 2 }} />
+          style={{ left: h.x - h.r, top: h.y - h.r, width: h.r * 2, height: h.r * 2 }}
+          onPointerDown={(e) => { e.stopPropagation(); flyTo(h.x, h.y, h); }} />
       ))}
       {hover && <div className="hotspot-label" style={{ left: hover.x, top: hover.y - hover.r - 16 }}>{hover.label}</div>}
       <div className="hand" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}>

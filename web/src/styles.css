@@ -218,6 +218,7 @@ button { font: inherit; cursor: pointer; }
 
 /* ---------------- TV: point and click ---------------- */
 .hand { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; will-change: transform; }
+.hand-catcher { position: absolute; inset: 0; z-index: 1; }
 .hand-icon { position: absolute; left: -20px; top: -8px; filter: drop-shadow(0 8px 10px #000a); transform-origin: 22% 8%; transform: rotate(-12deg); }
 .hand-icon.press { animation: press 0.25s ease; }
 @keyframes press { 50% { transform: rotate(-12deg) scale(0.86); } }
@@ -229,7 +230,7 @@ button { font: inherit; cursor: pointer; }
 .carry-record { width: 160px; height: 160px; border-radius: 50%; background: repeating-radial-gradient(#111 0 4px, #262626 4px 6px); position: relative; animation: spin 6s linear infinite; }
 .carry-record::after { content: ""; position: absolute; inset: 56px; border-radius: 50%; background: var(--holly); }
 
-.hotspot { position: absolute; z-index: 5; border-radius: 50%; pointer-events: none; transition: box-shadow 0.2s, background 0.2s; }
+.hotspot { position: absolute; z-index: 5; border-radius: 50%; cursor: pointer; transition: box-shadow 0.2s, background 0.2s; }
 .hotspot.on { background: radial-gradient(circle, #ffe9a855, transparent 70%); box-shadow: 0 0 0 4px #ffe9a8cc, 0 0 40px #ffd36b; animation: glow 1.2s ease-in-out infinite; }
 @keyframes glow { 50% { box-shadow: 0 0 0 7px #ffe9a8, 0 0 60px #ffd36b; } }
 .hotspot-label { position: absolute; z-index: 21; transform: translate(-50%, -100%); padding: 8px 18px; border-radius: 12px; background: #0d1b2ae6; border: 2px solid var(--brass); font-size: 26px; font-weight: 800; white-space: nowrap; pointer-events: none; }
@@ -361,15 +362,15 @@ button { font: inherit; cursor: pointer; }
 /* TV: warming Jingle in the garden */
 .warm-tray { position: absolute; left: 1320px; top: 250px; width: 540px; padding: 22px 28px 28px; border-radius: 26px; background: #0d1b2acc; border: 3px dashed #c8963e88; }
 .warm-tray .tray-title { position: static; display: block; margin-bottom: 16px; }
-.warm-items { display: flex; flex-wrap: wrap; gap: 22px; min-height: 230px; align-items: center; }
-.warm-item { margin: 0; width: 150px; text-align: center; transition: transform 0.25s ease; }
+.warm-items { display: flex; flex-wrap: wrap; gap: 22px; min-height: 230px; align-items: center; padding-top: 18px; }
+.warm-item { margin: 0; width: 150px; text-align: center; transition: transform 0.25s ease; cursor: pointer; }
 .warm-item img { width: 140px; height: 140px; object-fit: cover; border: 8px solid #fffaf0; border-radius: 6px; box-shadow: 0 10px 24px #000a; }
 .warm-item figcaption { font-family: var(--hand); font-size: 28px; line-height: 1.1; margin-top: 8px; }
-.warm-item.focus { transform: scale(1.12) translateY(-10px); }
+.warm-item.focus { transform: scale(1.08); }
 .warm-item.focus img { box-shadow: 0 0 0 6px var(--brass), 0 0 40px #ffd36b; }
 .warm-item.fly { animation: warmfly 0.9s cubic-bezier(.5,0,.5,1) forwards; }
 @keyframes warmfly { to { transform: translate(-860px, 120px) scale(0.4) rotate(-20deg); opacity: 0; } }
-.warm-scarf { display: flex; gap: 18px; align-items: center; margin-top: 18px; padding: 14px 18px; border-radius: 18px; background: #12301ccc; border: 2px solid #3f7a4f; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.warm-scarf { cursor: pointer; display: flex; gap: 18px; align-items: center; margin-top: 18px; padding: 14px 18px; border-radius: 18px; background: #12301ccc; border: 2px solid #3f7a4f; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .warm-scarf img { width: 110px; height: 110px; object-fit: contain; transform: scaleX(-1); filter: drop-shadow(0 6px 8px #000a); }
 .warm-scarf div { display: flex; flex-direction: column; gap: 4px; }
 .warm-scarf strong { font-size: 30px; line-height: 1.15; }
@@ -428,3 +429,7 @@ button { font: inherit; cursor: pointer; }
 .stage:has(.orchestra-meter) .narration.top { bottom: 200px; }
 
 .leave-new { opacity: 0.75; font-size: 0.85em; }
+
+/* pointer remotes */
+.wheel, .wheel .ghost { cursor: pointer; }
+.combo-open { display: block; margin: 18px auto 0; padding: 12px 42px; border-radius: 14px; border: 0; background: var(--brass); color: #2b1d14; font-size: 30px; font-weight: 800; cursor: pointer; }
