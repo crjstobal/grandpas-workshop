@@ -13,16 +13,21 @@ let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 /** The nodes of whatever is playing, so stop() can silence it at once. */
 let playing: OscillatorNode[] = [];
-let ducked = false;
+let duckLevel = 1;
+let releaseTimer: ReturnType<typeof setTimeout> | null = null;
 const FULL = 1;
-const DUCKED = 0.3;
+/** Under the narrator and Grandpa the music nearly disappears; under Jingle and Alexa a bit less. */
+const DUCK_STORY = 0.12;
+const DUCK_CHAT = 0.2;
+/** After a line ends, wait before swelling back, so it doesn't breathe between lines. */
+const RELEASE_MS = 1400;
 
 function out() {
   ctx ??= new AudioContext();
   if (ctx.state === "suspended") void ctx.resume();
   if (!master) {
     master = ctx.createGain();
-    master.gain.value = ducked ? DUCKED : FULL;
+    master.gain.value = duckLevel;
     master.connect(ctx.destination);
   }
   return { c: ctx, m: master };
@@ -50,7 +55,7 @@ function note(at: number, semis: number, dur: number) {
 // ---- background loop ----
 
 const BED_URL = "/music/workshop.mp3";
-const BED_LEVEL = 0.3;
+const BED_LEVEL = 0.24;
 const XFADE = 4; // seconds of overlap between one pass and the next
 const SKIP = 0.5; // the file opens with half a second of near-silence
 let bedBuf: Promise<AudioBuffer | null> | null = null;
@@ -147,11 +152,16 @@ export const musicBox = {
     for (const o of playing) { try { o.stop(); } catch { /* already stopped */ } }
     playing = [];
   },
-  /** Lower the music while someone speaks. */
-  duck(on: boolean) {
-    ducked = on;
-    if (!master || !ctx) return;
-    master.gain.setTargetAtTime(on ? DUCKED : FULL, ctx.currentTime, 0.15);
+  /** Lower the music while someone speaks: "story" for the narrator and Grandpa (deeper), "chat"
+   * for Jingle and Alexa, null when quiet (the music comes back after a short pause). */
+  duck(voice: "story" | "chat" | null) {
+    if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
+    const apply = (level: number, tc: number) => {
+      duckLevel = level;
+      if (master && ctx) master.gain.setTargetAtTime(level, ctx.currentTime, tc);
+    };
+    if (voice) apply(voice === "story" ? DUCK_STORY : DUCK_CHAT, 0.08);
+    else releaseTimer = setTimeout(() => apply(FULL, 0.6), RELEASE_MS);
   },
   chime() {
     try {

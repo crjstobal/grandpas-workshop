@@ -279,8 +279,8 @@ export default function TvApp() {
 
         {showJingle && <Jingle mood={jingle!.mood} line={jingle!.line} at={jingle!.at} chapter={state!.chapter} shake={state!.lastShake?.at} />}
 
-        {state && !["lobby", "message"].includes(state.chapter) && !play?.hideNarration && story.caption && (
-          <div className={`narration ${handActive ? "top" : ""}`}>
+        {state && !["lobby", "message"].includes(state.chapter) && !play?.hideNarration && story.caption && !(story.told && !ch.phoneTask) && (
+          <div className={`narration ${handActive ? "top" : ""} ${story.told ? "told" : ""}`}>
             <p>{story.caption}</p>
             {ch.phoneTask && <p className="task"><PhoneIcon /> {turnTask(state) ?? ch.phoneTask}</p>}
           </div>
@@ -332,6 +332,8 @@ function useStory(state: PublicState | null) {
   const finale = useRef<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [caption, setCaption] = useState("");
+  /** The narrator has finished this chapter's text: it leaves the screen (the phone task stays). */
+  const [told, setTold] = useState(false);
 
   useEffect(() => {
     if (!state) return;
@@ -340,13 +342,15 @@ function useStory(state: PublicState | null) {
       lastChapter.current = state.chapter;
       const ch = chapterOf(state.chapter);
       setCaption(ch.narration);
+      setTold(false);
+      const chapter = state.chapter;
       if (state.chapter === "message") {
         setBusy(true);
         void speak("alexa", ALEXA_LINES.newMessage, { kind: "story" })
           .then(() => speak("grandpa", GRANDPA.stuck))
           .then(() => setBusy(false));
       } else if (ch.narration) {
-        void speak("narrator", ch.narration);
+        void speak("narrator", ch.narration).then(() => setTimeout(() => { if (lastChapter.current === chapter) setTold(true); }, 2500));
       }
       if (state.jingle.intro && state.jingle.line) {
         lastJingle.current = state.jingle.at;
@@ -386,7 +390,7 @@ function useStory(state: PublicState | null) {
     }
   }, [state]);
   useEffect(() => () => stop(), []);
-  return { busy, caption };
+  return { busy, caption, told };
 }
 
 /** Every shake from a phone clicks Jingle's key on the TV. */

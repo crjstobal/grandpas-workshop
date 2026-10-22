@@ -71,7 +71,7 @@ export function onSpeaking(fn: (who: Speaker | null) => void) {
 export const speaking = () => current?.line.who ?? null;
 
 function emit(who: Speaker | null) {
-  musicBox.duck(who !== null);
+  musicBox.duck(who === null ? null : who === "narrator" || who === "grandpa" ? "story" : "chat");
   for (const l of listeners) l(who);
 }
 
