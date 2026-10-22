@@ -29,7 +29,7 @@ and he opens, carries and places things.
 | Grandpa's secret | "Alexa, open Grandpa's Workshop" | Search the room for the hidden record | MCP server + simulated Alexa+ (Nova) |
 | The missing star | Everyone draws ornaments | Hang each one on a hook, place the star | Amazon Nova (vision) |
 | Starlight | Shake to make starlight fall | Fly Jingle through the sparkles to fill the star | Live room state |
-| Finale | Save the letter as a card | The tree lights up, Grandpa's letter is read aloud | Amazon Nova, Amazon Polly |
+| Finale | Save the letter as a card | The tree lights up, Grandpa's letter is read aloud | Amazon Nova, ElevenLabs |
 
 Sound effects and Grandpa's music box are synthesized in the browser (Web Audio). The background
 music is one loop composed with Eleven Music (cleared for commercial use) by
@@ -47,7 +47,7 @@ The full script is in [docs/STORY.md](docs/STORY.md).
                                                        │
                              server (Node, Hono)  ─────┤ game engine (pure TS, no vendor SDKs)
                                                        ├ Amazon Bedrock: Nova 2 Lite (vision judge, letter, Alexa sim)
-                                                       └ Amazon Polly (narrator, Jingle, Alexa voices)
+                                                       └ voices: ElevenLabs (key in SSM), Amazon Polly as fallback
 ```
 
 - `shared/` story script and types shared by every part.
@@ -113,7 +113,14 @@ Live build: https://54.217.90.126.sslip.io/tv (the Fire TV app in `tv-app/` poin
 - **Amazon Bedrock (Amazon Nova 2 Lite):** looks at every photo (drawings and objects) and
   decides generously whether it matches what Jingle asked for, writing Jingle's reaction; plays
   Alexa+ through the MCP server; writes Grandpa's final letter from what the family did.
-- **Amazon Polly (neural voices):** the narrator, Jingle and Alexa each have their own voice.
+- **Amazon Polly (neural voices):** the fallback voices for the narrator, Jingle, Grandpa and
+  Alexa. The main voices are ElevenLabs: scripted lines are pre-rendered into `web/public/voice`,
+  dynamic ones (names, Nova's words, the letter) are synthesized live with the key read from SSM.
+- **Amazon EC2 (Graviton t4g.nano):** runs the game server; games live in memory and are saved to
+  disk, so they survive restarts and deploys.
+- **AWS Systems Manager:** Parameter Store holds the voice key (SecureString, read by the
+  instance role); Run Command installs each release, so the server has no SSH.
+- **Amazon S3:** the release bucket. **AWS CloudFormation:** the whole stack in `infra/core.yaml`.
 
 ## License
 
